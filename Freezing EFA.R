@@ -22,7 +22,15 @@ library(qdap)
 ######################################
 
 ## Remove unneeded columns from the dataset, refer to data dictionary for more info 
-freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_form_timestamp,sona_id,con_date,con_sig,con_email,consent_form_complete,asi_timestamp,asi_complete,pswq_timestamp,pswq_complete,rrq_timestamp,rrq_complete,sias_timestamp,sias_complete,masq_timestamp,masq_complete,lec_timestamp,lec_complete,siasii_timestamp,siasii_complete,afq_timestamp,afq_complete,afqs_timestamp,afqs_complete,panas_timestamp,panas_complete,atq_timestamp,atq_complete,brief_timestamp,brief_complete,debriefing_form_timestamp,debriefing_form_complete))
+freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_form_timestamp,
+                                            sona_id,con_date,con_sig,con_email,consent_form_complete,
+                                            asi_timestamp,asi_complete,pswq_timestamp,pswq_complete,
+                                            rrq_timestamp,rrq_complete,sias_timestamp,sias_complete,
+                                            masq_timestamp,masq_complete,lec_timestamp,lec_complete,
+                                            siasii_timestamp,siasii_complete,afq_timestamp,afq_complete,
+                                            afqs_timestamp,afqs_complete,panas_timestamp,panas_complete,
+                                            atq_timestamp,atq_complete,brief_timestamp,brief_complete,
+                                            debriefing_form_timestamp,debriefing_form_complete))
 
 ## Convert first and last name columns to characters
 freezing_raw$con_fn <- as.character(freezing_raw$con_fn)
@@ -46,11 +54,35 @@ freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 duplicates(freezing_raw$con_fn)
 duplicates(freezing_raw$con_ln)
 grepl()
+duplicate_fn<-duplicates(freezing_raw$con_fn)
+duplicate_ln<-duplicates(freezing_raw$con_ln)
+str(duplicate_fn)
+duplicate_names<-append(duplicate_fn, duplicate_ln)
+duplicates(duplicate_names)
+##a = c(5,7,2,9)
+##ifelse(a == c(2,4,8,10),"even","odd")
+
+
 
 #Generate a new data set for Time 2
 t2_raw<-freezing_raw %>%
-  dplyr::filter(con_fn==grepl(con_fn))
+  dplyr::filter(con_ln %in% duplicate_ln & con_fn %in% duplicate_fn)
 
+duplicate_t2_fn<-duplicates(t2_raw$con_fn)
+duplicate_t2_ln<-duplicates(t2_raw$con_ln)
+nd_t2_ln<-duplicates(t2_raw$con_ln)
+
+t2_raw<-t2_raw %>%
+  dplyr::filter(con_ln %in% duplicate_t2_ln & con_fn %in% duplicate_t2_fn) %>%
+  dplyr::filter(con_fn %in% duplicate_t2_fn & con_fn %in% t2_raw) %>%
+  !duplicated(t2_raw$con_fn)
+
+ifelse(t2_raw$con_fn==t2_raw$con_fn & t2_raw$con_fn==t2_raw$con_ln,)
+
+'%!in%' = Negate(`%in%`)
+#t2_raw<-t2_raw[(t2_raw$con_ln %!in% duplicate_ln & t2_raw$con_fn %!in% duplicate_fn),]
+  
+#grepl(pattern, x, ignore.case = FALSE, perl = FALSE,fixed = FALSE, useBytes = FALSE)
 
 ## cutting out AFQ endorsement section ##
 freezing_raw<-dplyr::select(freezing_raw,-c(afq_1:afq_24))
