@@ -2,7 +2,6 @@
 ### Freezing EFA Analysis ###
 ##############################
 
-freezing_raw<-read.csv(file.choose())
 
 ###############################
 ## install relevant packages ##
@@ -17,13 +16,17 @@ library(GPArotation)
 install.packages("qdap")
 library(qdap)
 
+##Import data##
+freezing_raw<-read.csv(file.choose())
+
+
 ######################################
 ## data cleaning - removing columns ##
 ######################################
 
 ## Remove unneeded columns from the dataset, refer to data dictionary for more info 
 freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_form_timestamp,
-                                            sona_id,con_date,con_sig,con_email,consent_form_complete,
+                                            sona_id,con_sig,con_email,consent_form_complete,
                                             asi_timestamp,asi_complete,pswq_timestamp,pswq_complete,
                                             rrq_timestamp,rrq_complete,sias_timestamp,sias_complete,
                                             masq_timestamp,masq_complete,lec_timestamp,lec_complete,
@@ -32,17 +35,24 @@ freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_for
                                             atq_timestamp,atq_complete,brief_timestamp,brief_complete,
                                             debriefing_form_timestamp,debriefing_form_complete))
 
-## Convert first and last name columns to characters
-freezing_raw$con_fn <- as.character(freezing_raw$con_fn)
-freezing_raw$con_ln <- as.character(freezing_raw$con_ln)
+## clear white space in first and last name columns 
+freezing_raw$con_fn<-trimws(freezing_raw$con_fn)
+freezing_raw$con_ln<-trimws(freezing_raw$con_ln)
+
+## Uniting first name and last name into one column ##
+freezing_raw<-tidyr::unite(freezing_raw, name, con_fn:con_ln, sep = " ", remove = TRUE)
+
+
+## Convert name column to character
+freezing_raw$name <- as.character(freezing_raw$name)
+
 
 ### Make sure conversion worked - diagnostic steps ###
-## examine the class of first and last name columns 
-typeof(freezing_raw$con_fn)
-typeof(freezing_raw$con_ln)
-## examine the structure of first and last name columns 
-str(freezing_raw$con_fn)
-str(freezing_raw$con_ln)
+## examine the class of name column
+typeof(freezing_raw$name)
+
+## examine the structure of name column
+str(freezing_raw$name)
 
 
 ## specifying column index 390 = exclusion of any incomplete data ##
@@ -50,48 +60,28 @@ freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 #Column 390 is the last item of data collection, if the participant did not make it that far in the survey, they did not complete all measures, and they are excluded with this line of code 
 
 
-### extract repeat participants ###
-duplicates(freezing_raw$con_fn)
-duplicates(freezing_raw$con_ln)
-grepl()
-duplicate_fn<-duplicates(freezing_raw$con_fn)
-duplicate_ln<-duplicates(freezing_raw$con_ln)
-str(duplicate_fn)
-duplicate_names<-append(duplicate_fn, duplicate_ln)
-duplicates(duplicate_names)
-##a = c(5,7,2,9)
-##ifelse(a == c(2,4,8,10),"even","odd")
+
+### extract repeat participants & Generate a new data set for Time 2 ###
+T2_data<-freezing_raw %>%
+  dplyr::filter(duplicated(name))
+
+freezing_raw_d<-freezing_raw %>%
+  dplyr::distinct(name, .keep_all = TRUE)
+                
 
 
 
-#Generate a new data set for Time 2
-t2_raw<-freezing_raw %>%
-  dplyr::filter(con_ln %in% duplicate_ln & con_fn %in% duplicate_fn)
+###################################################
+##  Traditional EFA for Freezing (MASQ & AFQ)    ##
+###################################################   
 
-duplicate_t2_fn<-duplicates(t2_raw$con_fn)
-duplicate_t2_ln<-duplicates(t2_raw$con_ln)
-nd_t2_ln<-duplicates(t2_raw$con_ln)
-
-t2_raw<-t2_raw %>%
-  dplyr::filter(con_ln %in% duplicate_t2_ln & con_fn %in% duplicate_t2_fn) %>%
-  dplyr::filter(con_fn %in% duplicate_t2_fn & con_fn %in% t2_raw) %>%
-  !duplicated(t2_raw$con_fn)
-
-ifelse(t2_raw$con_fn==t2_raw$con_fn & t2_raw$con_fn==t2_raw$con_ln,)
-
-'%!in%' = Negate(`%in%`)
-#t2_raw<-t2_raw[(t2_raw$con_ln %!in% duplicate_ln & t2_raw$con_fn %!in% duplicate_fn),]
-  
-#grepl(pattern, x, ignore.case = FALSE, perl = FALSE,fixed = FALSE, useBytes = FALSE)
 
 ## cutting out AFQ endorsement section ##
 freezing_raw<-dplyr::select(freezing_raw,-c(afq_1:afq_24))
 #Check to see if we only have complete cases in the raw dataset
-complete.cases(freezing_raw)                     
+complete.cases(freezing_raw)     
 
-###################################################
-##  Traditional EFA for Freezing (MASQ & AFQ)    ##
-###################################################                   
+
 efa_freeze<-freezing_raw %>%
   dplyr::select(afqs_1:afqs_70)
 fa.parallel(efa_freeze, fm = 'minres', fa = 'fa', plot = FALSE)
