@@ -11,10 +11,16 @@ y
 library(tidyverse)
 install.packages("psych")
 library(psych)
+install.packages("ggplot2")
+library(ggplot2)
+install.packages("corrplot")
+library(corrplot)
 install.packages("GPArotation")
 library(GPArotation)
 install.packages("qdap")
 library(qdap)
+install.packages("nFactors")
+library(nFactors)
 
 ##Import data##
 freezing_raw<-read.csv(file.choose())
@@ -72,23 +78,73 @@ freezing_raw_d<-freezing_raw %>%
 
 
 ###################################################
-##  Traditional EFA for Freezing (MASQ & AFQ)    ##
+##     Traditional EFA for Freezing (AFQ)        ##
 ###################################################   
+
+## The following steps will only test the distinct entries, no participant duplicates are included ##
 
 
 ## cutting out AFQ endorsement section ##
-freezing_raw<-dplyr::select(freezing_raw,-c(afq_1:afq_24))
+freezing_raw_d<-dplyr::select(freezing_raw_d,-c(afq_1:afq_24))
 #Check to see if we only have complete cases in the raw dataset
-complete.cases(freezing_raw)     
+complete.cases(freezing_raw_d)     
 
 
-efa_freeze<-freezing_raw %>%
+
+
+## Set data to include anxious freezing symptom values ##
+efa_freeze<-freezing_raw_d %>%
   dplyr::select(afqs_1:afqs_70)
+
+## Determine number of factors to extract ##
+
+## Get eigenvalues ##
+ev<-eigen(cor(efa_freeze))
+
+## conduct parallel analysis ##
+ap<-parallel(subject = nrow(efa_freeze), var=ncol(efa_freeze), rep=100, cent=0.05)
+
+## Show analysis of factors to retain ##
+nS<-nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS)
+
+## Look for the number of components associated to the last severe slope change (i.e. what is the number of components before the slope flattens) ##
+## Remember to stay flexible. Scree plot indicates anywhere from 3-7 factors in our case ##
+
+
+
+
+## After # of factors has been decided upon, rotate your data ##
+
+## orthogonal rotation - assumes no correlation between components/factors ##
+efa.ort<-fa(efa_freeze, nfactors = 4, rotate = "varimax")
+print(efa.ort)
+
+## Let's make this easier to read and sort by loading above .3 for each factor##
+print(efa.ort, cut=.3)
+
+
+## How about oblique rotation - assumes correlation between components/factors ##
+efa.obl<-fa(efa_freeze, nfactors = 4, rotate = "oblimin")
+print(efa.obl)
+
+## Let's make this easier to read and sort by loading above .3 for each factor ##
+print(efa.obl, cut=.3)
+
+
+# how similar are these solutions? Let's check with a congruence coefficient ##
+factor.congruence(efa.ort,efa.obl)
+
+
+
+
+
+
 fa.parallel(efa_freeze, fm = 'minres', fa = 'fa', plot = FALSE)
 fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
 
 
-efa_df<-freezing_raw %>%
-  dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
-fa.parallel(efa_df, fm = 'minres', fa = 'fa', plot = FALSE)
-fa(efa_df,nfactors=11,rotate="oblimin",fm="minres")
+#efa_df<-freezing_raw %>%
+  #dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
+#fa.parallel(efa_df, fm = 'minres', fa = 'fa', plot = FALSE)
+#fa(efa_df,nfactors=11,rotate="oblimin",fm="minres")
