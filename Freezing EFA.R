@@ -121,19 +121,42 @@ efa.ort<-fa(efa_freeze, nfactors = 4, rotate = "varimax")
 print(efa.ort)
 
 ## Let's make this easier to read and sort by loading above .3 for each factor##
-print(efa.ort, cut=.3)
+print(efa.ort, cut=.4)
 
 
 ## How about oblique rotation - assumes correlation between components/factors ##
-efa.obl<-fa(efa_freeze, nfactors = 4, rotate = "oblimin")
-print(efa.obl)
+efa.obl.1<-fa(efa_freeze, nfactors = 1, rotate = "oblimin")
+print(efa.obl.1)
+
+
+efa.obl.2<-fa(efa_freeze, nfactors = 2, rotate = "oblimin")
+print(efa.obl.2, cut=.5, sort=T)
+
+efa.obl.3<-fa(efa_freeze, nfactors = 3, rotate = "oblimin")
+print(efa.obl.3, cut=.5, sort = T)
+
+factor.congruence(efa.obl.2,efa.obl.3)
+
+efa.obl.4<-fa(efa_freeze, nfactors = 4, rotate = "oblimin")
+print(efa.obl.4, cut=.5, sort = T)
+
+factor.congruence(efa.obl.3,efa.obl.4)
+
+efa.obl.5<-fa(efa_freeze, nfactors = 5, rotate = "oblimin")
+print(efa.obl.5, cut=.5, sort=T)
+
+efa.obl.6<-fa(efa_freeze, nfactors = 6, rotate = "oblimin")
+print(efa.obl.6, cut=.5, sort=T)
+
+efa.obl.7<-fa(efa_freeze, nfactors = 7, rotate = "oblimin")
+print(efa.obl.7, cut=.4, sort=T)
 
 ## Let's make this easier to read and sort by loading above .3 for each factor ##
-print(efa.obl, cut=.3)
-
+print(efa.obl, cut=.5)
+print(efa.obl.5, cut=.5)
 
 # how similar are these solutions? Let's check with a congruence coefficient ##
-factor.congruence(efa.ort,efa.obl)
+factor.congruence(efa.obl.5,efa.obl.1)
 
 
 
