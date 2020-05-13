@@ -21,6 +21,12 @@ install.packages("qdap")
 library(qdap)
 install.packages("nFactors")
 library(nFactors)
+install.packages("lavaan")
+library(lavaan)
+install.packages("ggthemes")
+library(ggthemes)
+install.packages("ggpubr")
+library(ggpubr)
 
 ##Import data##
 freezing_raw<-read.csv(file.choose())
@@ -73,8 +79,657 @@ T2_data<-freezing_raw %>%
 
 freezing_raw_d<-freezing_raw %>%
   dplyr::distinct(name, .keep_all = TRUE)
-                
 
+###############################################################################
+##        Rational Scale Development - Item Test Correlations                ##
+############################################################################### 
+
+
+## Examine Cognitive Totals ##
+hist(freezing_raw_d$afq_cog_total)
+summary(freezing_raw_d$afq_cog_total)
+describe(freezing_raw_d$afq_cog_total)
+
+
+## Examine Physical Totals ##
+hist(freezing_raw_d$afq_phys_total)
+summary(freezing_raw_d$afq_phys_total)
+describe(freezing_raw_d$afq_phys_total)
+
+
+## Examine Social-Evaluative Totals ##
+hist(freezing_raw_d$afq_soc_total)
+summary(freezing_raw_d$afq_soc_total)
+describe(freezing_raw_d$afq_soc_total)
+
+## Extract Freezing Item Reponses ##
+afq<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afq_soc_total)
+
+## Visualize Correlations - each item to total factor score ##
+
+pairs.panels(afq[,c(1,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(2,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(3,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(4,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(5,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(6,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(7,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(8,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(9,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(10,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(11,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(12,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(13,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(14,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(15,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(16,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(17,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(18,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(19,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(20,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(21,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(22,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(23,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(24,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(25,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(26,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(27,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(28,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(29,70:72)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+## Generate list of pearson coefficients between items and totals ##
+
+## make correlation matrices objects
+
+afq_1<-as.data.frame(cor(afq[, c("afqs_1", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_2<-as.data.frame(cor(afq[, c("afqs_2", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_3<-as.data.frame(cor(afq[, c("afqs_3", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_4<-as.data.frame(cor(afq[, c("afqs_4", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_5<-as.data.frame(cor(afq[, c("afqs_5", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_6<-as.data.frame(cor(afq[, c("afqs_6", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_7<-as.data.frame(cor(afq[, c("afqs_7", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_8<-as.data.frame(cor(afq[, c("afqs_8", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_9<-as.data.frame(cor(afq[, c("afqs_9", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_10<-as.data.frame(cor(afq[, c("afqs_10", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_11<-as.data.frame(cor(afq[, c("afqs_11", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_12<-as.data.frame(cor(afq[, c("afqs_12", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_13<-as.data.frame(cor(afq[, c("afqs_13", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_14<-as.data.frame(cor(afq[, c("afqs_14", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_15<-as.data.frame(cor(afq[, c("afqs_15", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_16<-as.data.frame(cor(afq[, c("afqs_16", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_17<-as.data.frame(cor(afq[, c("afqs_17", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_18<-as.data.frame(cor(afq[, c("afqs_18", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_19<-as.data.frame(cor(afq[, c("afqs_19", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_20<-as.data.frame(cor(afq[, c("afqs_20", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_21<-as.data.frame(cor(afq[, c("afqs_21", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_22<-as.data.frame(cor(afq[, c("afqs_22", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_23<-as.data.frame(cor(afq[, c("afqs_23", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_24<-as.data.frame(cor(afq[, c("afqs_24", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_25<-as.data.frame(cor(afq[, c("afqs_25", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_26<-as.data.frame(cor(afq[, c("afqs_26", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_27<-as.data.frame(cor(afq[, c("afqs_27", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_28<-as.data.frame(cor(afq[, c("afqs_28", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_29<-as.data.frame(cor(afq[, c("afqs_30", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_30<-as.data.frame(cor(afq[, c("afqs_31", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_31<-as.data.frame(cor(afq[, c("afqs_32", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_32<-as.data.frame(cor(afq[, c("afqs_33", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_33<-as.data.frame(cor(afq[, c("afqs_34", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_34<-as.data.frame(cor(afq[, c("afqs_35", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_35<-as.data.frame(cor(afq[, c("afqs_36", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_36<-as.data.frame(cor(afq[, c("afqs_37", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_37<-as.data.frame(cor(afq[, c("afqs_38", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_38<-as.data.frame(cor(afq[, c("afqs_39", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_39<-as.data.frame(cor(afq[, c("afqs_40", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_40<-as.data.frame(cor(afq[, c("afqs_41", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_41<-as.data.frame(cor(afq[, c("afqs_42", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_42<-as.data.frame(cor(afq[, c("afqs_43", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_43<-as.data.frame(cor(afq[, c("afqs_44", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_44<-as.data.frame(cor(afq[, c("afqs_45", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_45<-as.data.frame(cor(afq[, c("afqs_46", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_46<-as.data.frame(cor(afq[, c("afqs_47", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_47<-as.data.frame(cor(afq[, c("afqs_48", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_48<-as.data.frame(cor(afq[, c("afqs_49", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_49<-as.data.frame(cor(afq[, c("afqs_50", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_50<-as.data.frame(cor(afq[, c("afqs_51", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_51<-as.data.frame(cor(afq[, c("afqs_52", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_52<-as.data.frame(cor(afq[, c("afqs_53", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_53<-as.data.frame(cor(afq[, c("afqs_54", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_54<-as.data.frame(cor(afq[, c("afqs_55", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_55<-as.data.frame(cor(afq[, c("afqs_56", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_56<-as.data.frame(cor(afq[, c("afqs_57", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_57<-as.data.frame(cor(afq[, c("afqs_58", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_58<-as.data.frame(cor(afq[, c("afqs_59", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_59<-as.data.frame(cor(afq[, c("afqs_60", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_60<-as.data.frame(cor(afq[, c("afqs_61", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_61<-as.data.frame(cor(afq[, c("afqs_62", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_62<-as.data.frame(cor(afq[, c("afqs_63", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_63<-as.data.frame(cor(afq[, c("afqs_64", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_64<-as.data.frame(cor(afq[, c("afqs_65", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_65<-as.data.frame(cor(afq[, c("afqs_66", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_66<-as.data.frame(cor(afq[, c("afqs_67", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_67<-as.data.frame(cor(afq[, c("afqs_68", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_68<-as.data.frame(cor(afq[, c("afqs_69", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+afq_69<-as.data.frame(cor(afq[, c("afqs_70", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
+
+## renaming column title 
+
+afq_1<-afq_1 %>%
+  rename(item = afqs_1)
+
+afq_2<-afq_2 %>%
+  rename(item = afqs_2)
+
+afq_3<-afq_3 %>%
+  rename(item = afqs_3)
+
+afq_4<-afq_4 %>%
+  rename(item = afqs_4)
+
+afq_5<-afq_5 %>%
+  rename(item = afqs_5)
+
+afq_6<-afq_6 %>%
+  rename(item = afqs_6)
+
+afq_7<-afq_7 %>%
+  rename(item = afqs_7)
+
+afq_8<-afq_8 %>%
+  rename(item = afqs_8)
+
+afq_9<-afq_9 %>%
+  rename(item = afqs_9)
+
+afq_10<-afq_10 %>%
+  rename(item = afqs_10)
+
+afq_11<-afq_11 %>%
+  rename(item = afqs_11)
+
+afq_12<-afq_12 %>%
+  rename(item = afqs_12)
+
+afq_13<-afq_13 %>%
+  rename(item = afqs_13)
+
+afq_14<-afq_14 %>%
+  rename(item = afqs_14)
+
+afq_15<-afq_15 %>%
+  rename(item = afqs_15)
+
+afq_16<-afq_16 %>%
+  rename(item = afqs_16)
+
+afq_17<-afq_17 %>%
+  rename(item = afqs_17)
+
+afq_18<-afq_18 %>%
+  rename(item = afqs_18)
+
+afq_19<-afq_19 %>%
+  rename(item = afqs_19)
+
+afq_20<-afq_20 %>%
+  rename(item = afqs_20)
+
+afq_21<-afq_21 %>%
+  rename(item = afqs_21)
+
+afq_22<-afq_22 %>%
+  rename(item = afqs_22)
+
+afq_23<-afq_23 %>%
+  rename(item = afqs_23)
+
+afq_24<-afq_24 %>%
+  rename(item = afqs_24)
+
+afq_25<-afq_25 %>%
+  rename(item = afqs_25)
+
+afq_26<-afq_26 %>%
+  rename(item = afqs_26)
+
+afq_27<-afq_27 %>%
+  rename(item = afqs_27)
+
+afq_28<-afq_28 %>%
+  rename(item = afqs_28)
+
+afq_29<-afq_29 %>%
+  rename(item = afqs_30)
+
+afq_30<-afq_30 %>%
+  rename(item = afqs_31)
+
+afq_31<-afq_31 %>%
+  rename(item = afqs_32)
+
+afq_32<-afq_32 %>%
+  rename(item = afqs_33)
+
+afq_33<-afq_33 %>%
+  rename(item = afqs_34)
+
+afq_34<-afq_34 %>%
+  rename(item = afqs_35)
+
+afq_35<-afq_35 %>%
+  rename(item = afqs_36)
+
+afq_36<-afq_36 %>%
+  rename(item = afqs_37)
+
+afq_37<-afq_37 %>%
+  rename(item = afqs_38)
+
+afq_38<-afq_38 %>%
+  rename(item = afqs_39)
+
+afq_39<-afq_39 %>%
+  rename(item = afqs_40)
+
+afq_40<-afq_40 %>%
+  rename(item = afqs_41)
+
+afq_41<-afq_41 %>%
+  rename(item = afqs_42)
+
+afq_42<-afq_42 %>%
+  rename(item = afqs_43)
+
+afq_43<-afq_43 %>%
+  rename(item = afqs_44)
+
+afq_44<-afq_44 %>%
+  rename(item = afqs_45)
+
+afq_45<-afq_45 %>%
+  rename(item = afqs_46)
+
+afq_46<-afq_46 %>%
+  rename(item = afqs_47)
+
+afq_47<-afq_47 %>%
+  rename(item = afqs_48)
+
+afq_48<-afq_48 %>%
+  rename(item = afqs_49)
+
+afq_49<-afq_49 %>%
+  rename(item = afqs_50)
+
+afq_50<-afq_50 %>%
+  rename(item = afqs_51)
+
+afq_51<-afq_51 %>%
+  rename(item = afqs_52)
+
+afq_52<-afq_52 %>%
+  rename(item = afqs_53)
+
+afq_53<-afq_53 %>%
+  rename(item = afqs_54)
+
+afq_54<-afq_54 %>%
+  rename(item = afqs_55)
+
+afq_55<-afq_55 %>%
+  rename(item = afqs_56)
+
+afq_56<-afq_56 %>%
+  rename(item = afqs_57)
+
+afq_57<-afq_57 %>%
+  rename(item = afqs_58)
+
+afq_58<-afq_58 %>%
+  rename(item = afqs_59)
+
+afq_59<-afq_59 %>%
+  rename(item = afqs_60)
+
+afq_60<-afq_60 %>%
+  rename(item = afqs_61)
+
+afq_61<-afq_61 %>%
+  rename(item = afqs_62)
+
+afq_62<-afq_62 %>%
+  rename(item = afqs_63)
+
+afq_63<-afq_63 %>%
+  rename(item = afqs_64)
+
+afq_64<-afq_64 %>%
+  rename(item = afqs_65)
+
+afq_65<-afq_65 %>%
+  rename(item = afqs_66)
+
+afq_66<-afq_66 %>%
+  rename(item = afqs_67)
+
+afq_67<-afq_67 %>%
+  rename(item = afqs_68)
+
+afq_68<-afq_68 %>%
+  rename(item = afqs_69)
+
+afq_69<-afq_69 %>%
+  rename(item = afqs_70)
+
+## Preserve first row of each data set
+
+afq_1<-afq_1[ -c(2:4), ]
+afq_2<-afq_2[ -c(2:4), ]
+afq_3<-afq_3[ -c(2:4), ]
+afq_4<-afq_4[ -c(2:4), ]
+afq_5<-afq_5[ -c(2:4), ]
+afq_6<-afq_6[ -c(2:4), ]
+afq_7<-afq_7[ -c(2:4), ]
+afq_8<-afq_8[ -c(2:4), ]
+afq_9<-afq_9[ -c(2:4), ]
+afq_10<-afq_10[ -c(2:4), ]
+afq_11<-afq_11[ -c(2:4), ]
+afq_12<-afq_12[ -c(2:4), ]
+afq_13<-afq_13[ -c(2:4), ]
+afq_14<-afq_14[ -c(2:4), ]
+afq_15<-afq_15[ -c(2:4), ]
+afq_16<-afq_16[ -c(2:4), ]
+afq_17<-afq_17[ -c(2:4), ]
+afq_18<-afq_18[ -c(2:4), ]
+afq_19<-afq_19[ -c(2:4), ]
+afq_20<-afq_20[ -c(2:4), ]
+afq_21<-afq_21[ -c(2:4), ]
+afq_22<-afq_22[ -c(2:4), ]
+afq_23<-afq_23[ -c(2:4), ]
+afq_24<-afq_24[ -c(2:4), ]
+afq_25<-afq_25[ -c(2:4), ]
+afq_26<-afq_26[ -c(2:4), ]
+afq_27<-afq_27[ -c(2:4), ]
+afq_28<-afq_28[ -c(2:4), ]
+afq_29<-afq_29[ -c(2:4), ]
+afq_30<-afq_30[ -c(2:4), ]
+afq_31<-afq_31[ -c(2:4), ]
+afq_32<-afq_32[ -c(2:4), ]
+afq_33<-afq_33[ -c(2:4), ]
+afq_34<-afq_34[ -c(2:4), ]
+afq_35<-afq_35[ -c(2:4), ]
+afq_36<-afq_36[ -c(2:4), ]
+afq_37<-afq_37[ -c(2:4), ]
+afq_38<-afq_38[ -c(2:4), ]
+afq_39<-afq_39[ -c(2:4), ]
+afq_40<-afq_40[ -c(2:4), ]
+afq_41<-afq_41[ -c(2:4), ]
+afq_42<-afq_42[ -c(2:4), ]
+afq_43<-afq_43[ -c(2:4), ]
+afq_44<-afq_44[ -c(2:4), ]
+afq_45<-afq_45[ -c(2:4), ]
+afq_46<-afq_46[ -c(2:4), ]
+afq_47<-afq_47[ -c(2:4), ]
+afq_48<-afq_48[ -c(2:4), ]
+afq_49<-afq_49[ -c(2:4), ]
+afq_50<-afq_50[ -c(2:4), ]
+afq_51<-afq_51[ -c(2:4), ]
+afq_52<-afq_52[ -c(2:4), ]
+afq_53<-afq_53[ -c(2:4), ]
+afq_54<-afq_54[ -c(2:4), ]
+afq_55<-afq_55[ -c(2:4), ]
+afq_56<-afq_56[ -c(2:4), ]
+afq_57<-afq_57[ -c(2:4), ]
+afq_58<-afq_58[ -c(2:4), ]
+afq_59<-afq_59[ -c(2:4), ]
+afq_60<-afq_60[ -c(2:4), ]
+afq_61<-afq_61[ -c(2:4), ]
+afq_62<-afq_62[ -c(2:4), ]
+afq_63<-afq_63[ -c(2:4), ]
+afq_64<-afq_64[ -c(2:4), ]
+afq_65<-afq_65[ -c(2:4), ]
+afq_66<-afq_66[ -c(2:4), ]
+afq_67<-afq_67[ -c(2:4), ]
+afq_68<-afq_68[ -c(2:4), ]
+afq_69<-afq_69[ -c(2:4), ]
+
+
+
+## append all data frames into one
+
+afq_cor_table<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8,afq_9,afq_10,afq_11,afq_12,afq_13,afq_14,afq_15,afq_16,afq_17,afq_18,afq_19,
+                                 afq_20,afq_21,afq_22,afq_23,afq_24,afq_25,afq_26,afq_27,afq_28,afq_29,afq_30,afq_31,afq_32,afq_33,afq_34,afq_35,afq_36,afq_37,
+                                 afq_38,afq_39,afq_40,afq_41,afq_42,afq_43,afq_44,afq_45,afq_46,afq_47,afq_48,afq_49,afq_50,afq_51,afq_52,afq_53,afq_54,afq_55,
+                                 afq_56,afq_57,afq_58,afq_59,afq_60,afq_61,afq_62,afq_63,afq_64,afq_65,afq_66,afq_67,afq_68,afq_69)
+
+## clear item column
+
+afq_cor_table<-afq_cor_table[,-1]
+
+
+
+
+###############################################################################
+##         Anxiety Pre-Spring Break vs Post-Spring Break Testing             ##
+############################################################################### 
+
+## Create pre-spring break & post-spring break groups
+pre_sb<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$record_id < 540)
+
+post_sb<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$record_id >= 540)
+
+## Although our sample size is large enough, test for normality ##
+ggqqplot(pre_sb$asi_total)
+ggqqplot(pre_sb$masq_aa_total)
+ggqqplot(pre_sb$masq_ad_total)
+ggqqplot(pre_sb$pswq_total)
+
+
+ggqqplot(post_sb$asi_total)
+ggqqplot(post_sb$masq_aa_total)
+ggqqplot(post_sb$masq_ad_total)
+ggqqplot(post_sb$pswq_total)
+
+## Check for variance ##
+
+var.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less")
+hist(pre_sb$asi_total)
+hist(post_sb$asi_total)
+
+var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less")
+hist(pre_sb$masq_aa_total)
+hist(post_sb$masq_aa_total)
+
+var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less")
+par(mfrow=c(1,2))
+hist(pre_sb$masq_ad_total)
+hist(post_sb$masq_ad_total)
+
+var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less")
+
+t.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
+
+## T-Test for Anxiety Totals ##
+
+t.test(post_sb$asi_total,pre_sb$asi_total)
 
 
 ###################################################
