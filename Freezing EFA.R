@@ -27,6 +27,8 @@ install.packages("ggthemes")
 library(ggthemes)
 install.packages("ggpubr")
 library(ggpubr)
+install.packages("janitor")
+library(janitor)
 
 ##Import data##
 freezing_raw<-read.csv(file.choose())
@@ -73,17 +75,77 @@ freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 
 
 
-### extract repeat participants & Generate a new data set for Time 2 ###
-T2_data<-freezing_raw %>%
+### ############################################# ###
+### Generate data sets of all repeat participants ###
+### ############################################# ###
+
+duplicated<-freezing_raw %>%
+  janitor::get_dupes(name)
+
+## Clean duplicated data set: remove duplicates that had less than a week between entries
+
+duplicated<-duplicated %>%
+  dplyr::filter(duplicated$name != "Alexis Campos",duplicated$name != "Charlie Trost",
+                duplicated$name != "Chris Chang", duplicated$name != "Grace Kuehn",
+                duplicated$name != "Jonathan Xue", duplicated$name != "Jose Navarro", 
+                duplicated$name != "Matthew Boyd", duplicated$name != "maryam shaikh",
+                duplicated$name != "Melanie Alarcon", duplicated$name != "Nicholas Severin",
+                duplicated$name != "Niv Ostroff", duplicated$name != "othmane ezzabdi", 
+                duplicated$name != "Safia Tayyabi", duplicated$name != "Sean Gardiner")
+
+
+## Generate Time 1 entry of duplicated participants
+T1_dup<-duplicated %>%
+  dplyr::filter(!duplicated(name))
+
+## Generate Time 2 entry of duplicated participants
+T2_dup<-duplicated %>%
   dplyr::filter(duplicated(name))
 
-freezing_raw_d<-freezing_raw %>%
-  dplyr::distinct(name, .keep_all = TRUE)
+## Remove repeated entries within Time 2 due to questionnaire setup issue
+T2_dup<-T2_dup %>%
+  dplyr::filter(!duplicated(name))
+
+## Test for Normality & check descriptive stats
+ggqqplot(T1_dup$asi_total)
+summary(T1_dup$asi_total)
+ggqqplot(T1_dup$masq_aa_total)
+summary(T1_dup$masq_aa_total)
+ggqqplot(T1_dup$masq_ad_total)
+summary(T1_dup$masq_ad_total)
+ggqqplot(T1_dup$pswq_total)
+summary(T1_dup$pswq_total)
+
+ggqqplot(T2_dup$asi_total)
+summary(T2_dup$asi_total)
+ggqqplot(T2_dup$masq_aa_total)
+summary(T2_dup$masq_aa_total)
+ggqqplot(T2_dup$masq_ad_total)
+summary(T2_dup$masq_ad_total)
+ggqqplot(T2_dup$pswq_total)
+summary(T2_dup$pswq_total)
+
+## Test for Variance
+var.test(T1_dup$asi_total, T2_dup$asi_total, ratio = 1, alternative = "two.sided")
+var.test(T1_dup$masq_aa_total, T2_dup$masq_aa_total, ratio = 1, alternative = "two.sided")
+var.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, ratio = 1, alternative = "two.sided")
+var.test(T1_dup$pswq_total, T2_dup$pswq_total, ratio = 1, alternative = "two.sided")
+
+## Anxiety T Tests, unequal variances, T1 & T2 ##
+
+t.test(T1_dup$asi_total, T2_dup$asi_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+t.test(T1_dup$masq_aa_total, T2_dup$masq_aa_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+t.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 
 ###############################################################################
 ##        Rational Scale Development - Item Test Correlations                ##
 ############################################################################### 
 
+
+### Generate data set for only distinct entries
+freezing_raw_d<-freezing_raw %>%
+  dplyr::distinct(name, .keep_all = TRUE)
 
 ## Examine Cognitive Totals ##
 hist(freezing_raw_d$afq_cog_total)
@@ -707,29 +769,29 @@ ggqqplot(post_sb$pswq_total)
 
 ## Check for variance ##
 
-var.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less")
+var.test(pre_sb$asi_total, post_sb$asi_total, alternative =  "two.sided")
 hist(pre_sb$asi_total)
 hist(post_sb$asi_total)
 
-var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less")
+var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative =  "two.sided")
 hist(pre_sb$masq_aa_total)
 hist(post_sb$masq_aa_total)
 
-var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less")
+var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative =  "two.sided")
 par(mfrow=c(1,2))
 hist(pre_sb$masq_ad_total)
 hist(post_sb$masq_ad_total)
 
-var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less")
+var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative =  "two.sided")
+
+## T-Test for Anxiety Totals ##
 
 t.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less", var.equal = FALSE)
 t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less", var.equal = FALSE)
 t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.equal = FALSE)
 t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
 
-## T-Test for Anxiety Totals ##
 
-t.test(post_sb$asi_total,pre_sb$asi_total)
 
 
 ###################################################
