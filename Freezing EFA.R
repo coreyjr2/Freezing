@@ -394,8 +394,37 @@ pairs.panels(afq[,c(29,70:72)],
              ellipses = TRUE # show correlation ellipses
 )
 
-## Generate list of pearson coefficients between items and totals ##
 
+
+##################################################
+#### Get comparison of ASI, MASQ AA, and PSWQ ####
+##################################################
+
+pairs.panels(freezing_raw_d[,c(22,39,125,280:282)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+############################
+###### Score the brief #####
+############################
+
+freezing_raw_d$brief_total <- rowSums(freezing_raw_d[, c(317:392)])
+
+##################################################
+#### Get comparison of RRQ, SIAS, and Brief ######
+##################################################
+
+pairs.panels(freezing_raw_d[,c(64,85,393,280:282)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+## Generate list of pearson coefficients between items and totals ##
 ## make correlation matrices objects
 
 afq_1<-as.data.frame(cor(afq[, c("afqs_1", "afq_cog_total", "afq_phys_total", "afq_soc_total")], method = "pearson"))
