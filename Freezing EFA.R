@@ -82,7 +82,7 @@ freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 duplicated<-freezing_raw %>%
   janitor::get_dupes(name)
 
-## Clean duplicated data set: remove duplicates that had less than a week between entries
+## Clean duplicated data set: remove duplicates that had less than a week between entries **clean up and dont include names, use con_date
 
 duplicated<-duplicated %>%
   dplyr::filter(duplicated$name != "Alexis Campos",duplicated$name != "Charlie Trost",
@@ -141,6 +141,26 @@ t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, 
 ###############################################################################
 ##        Rational Scale Development - Item Test Correlations                ##
 ############################################################################### 
+## Extract Freezing Endorsement Reponses ##
+afq_endorsement<-freezing_raw_d %>%
+  dplyr::select(afq_1:afq_24)
+
+psych::describe(afq_endorsement$afq_1)
+psych::describe(afq_endorsement$afq_3)
+psych::describe(afq_endorsement$afq_5)
+psych::describe(afq_endorsement$afq_7)
+psych::describe(afq_endorsement$afq_9)
+psych::describe(afq_endorsement$afq_11)
+psych::describe(afq_endorsement$afq_13)
+psych::describe(afq_endorsement$afq_15)
+psych::describe(afq_endorsement$afq_17)
+psych::describe(afq_endorsement$afq_19)
+psych::describe(afq_endorsement$afq_21)
+psych::describe(afq_endorsement$afq_23)
+
+
+
+
 
 
 ### Generate data set for only distinct entries
@@ -169,6 +189,7 @@ afq<-freezing_raw_d %>%
   dplyr::select(afqs_1:afq_soc_total)
 
 ## Visualize Correlations - each item to total factor score ##
+?pairs.panels
 
 pairs.panels(afq[,c(1,70:72)], 
              method = "pearson", # correlation method
@@ -741,6 +762,7 @@ afq_cor_table<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8
 
 afq_cor_table<-afq_cor_table[,-1]
 
+write_tsv(afq_cor_table, "AFQ_Correlations")
 
 
 
@@ -792,7 +814,8 @@ t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.eq
 t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
 
 
-
+save(afq, file = "afq.RData")
+save(afq_endorsement, file = "afq_endorsement.Rdata")
 
 ###################################################
 ##     Traditional EFA for Freezing (AFQ)        ##
