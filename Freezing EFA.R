@@ -74,6 +74,9 @@ freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 #Column 390 is the last item of data collection, if the participant did not make it that far in the survey, they did not complete all measures, and they are excluded with this line of code 
 
 
+### Generate data set for only distinct entries
+freezing_raw_d<-freezing_raw %>%
+  dplyr::distinct(name, .keep_all = TRUE)
 
 ### ############################################# ###
 ### Generate data sets of all repeat participants ###
@@ -106,6 +109,17 @@ T2_dup<-duplicated %>%
 T2_dup<-T2_dup %>%
   dplyr::filter(!duplicated(name))
 
+## Create HPE and LPE totals for MASQ scores in T1 & T2
+T1_dup$MASQ_HPE_total<- rowSums(T1_dup[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
+T1_dup$MASQ_LPE_total<- rowSums(T1_dup[,c(102,97,94,91,100,107,112,124)])
+T2_dup$MASQ_HPE_total<- rowSums(T2_dup[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
+T2_dup$MASQ_LPE_total<- rowSums(T2_dup[,c(102,97,94,91,100,107,112,124)])
+
+psych::describe(T1_dup$MASQ_HPE_total)
+psych::describe(T2_dup$MASQ_HPE_total)
+psych::describe(T1_dup$MASQ_LPE_total)
+psych::describe(T2_dup$MASQ_LPE_total)
+
 ## Test for Normality & check descriptive stats
 ggqqplot(T1_dup$asi_total)
 summary(T1_dup$asi_total)
@@ -136,6 +150,8 @@ var.test(T1_dup$pswq_total, T2_dup$pswq_total, ratio = 1, alternative = "two.sid
 t.test(T1_dup$asi_total, T2_dup$asi_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 t.test(T1_dup$masq_aa_total, T2_dup$masq_aa_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 t.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+t.test(T1_dup$MASQ_HPE_total, T2_dup$MASQ_HPE_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+t.test(T1_dup$MASQ_LPE_total, T2_dup$MASQ_LPE_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 
 ###############################################################################
@@ -163,9 +179,6 @@ psych::describe(afq_endorsement$afq_23)
 
 
 
-### Generate data set for only distinct entries
-freezing_raw_d<-freezing_raw %>%
-  dplyr::distinct(name, .keep_all = TRUE)
 
 ## Examine Cognitive Totals ##
 hist(freezing_raw_d$afq_cog_total)
@@ -796,8 +809,14 @@ write_tsv(afq_cor_table, "AFQ_Correlations")
 
 
 ###############################################################################
-##         Anxiety Pre-Spring Break vs Post-Spring Break Testing             ##
+##     Anxiety/Depression Pre-Spring Break vs Post-Spring Break Testing      ##
 ############################################################################### 
+
+## Create MASQ High Positive Emotion (HPE) and Low Positive Emotion (LPE) columns
+
+freezing_raw_d$MASQ_HPE_total<- rowSums(freezing_raw_d[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
+freezing_raw_d$MASQ_LPE_total<- rowSums( freezing_raw_d[,c(102,97,94,91,100,107,112,124)])
+
 
 ## Create pre-spring break & post-spring break groups
 pre_sb<-freezing_raw_d %>%
@@ -805,6 +824,15 @@ pre_sb<-freezing_raw_d %>%
 
 post_sb<-freezing_raw_d %>%
   dplyr::filter(freezing_raw_d$record_id >= 540)
+
+pre_sb$MASQ_HPE_total<- rowSums(pre_sb[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
+post_sb$MASQ_LPE_total<- rowSums(post_sb[,c(102,97,94,91,100,107,112,124)])
+
+psych::describe(pre_sb$MASQ_HPE_total)
+psych::describe(post_sb$MASQ_HPE_total)
+psych::describe(pre_sb$MASQ_LPE_total)
+psych::describe(post_sb$MASQ_LPE_total)
+
 
 ## Although our sample size is large enough, test for normality ##
 ggqqplot(pre_sb$asi_total)
@@ -840,7 +868,11 @@ var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative =  "two.sided")
 t.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less", var.equal = FALSE)
 t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less", var.equal = FALSE)
 t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$MASQ_HPE_total, post_sb$MASQ_HPE_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$MASQ_LPE_total, post_sb$MASQ_LPE_total, alternative = "less", var.equal = FALSE)
 t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
+
+
 
 
 save(afq, file = "afq.RData")
@@ -872,6 +904,7 @@ ev<-eigen(cor(efa_freeze))
 
 ## conduct parallel analysis ##
 ap<-parallel(subject = nrow(efa_freeze), var=ncol(efa_freeze), rep=100, cent=0.05)
+
 
 ## Show analysis of factors to retain ##
 nS<-nScree(x=ev$values, aparallel=ap$eigen$qevpea)
