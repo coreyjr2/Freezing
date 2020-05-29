@@ -791,9 +791,28 @@ afq_cor_table<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8
 
 afq_cor_table<-afq_cor_table[,-1]
 
+afq_cor_table<-as.data.frame(afq_cor_table)
+
 write_tsv(afq_cor_table, "AFQ_Correlations")
 
 
+####################################################
+#Make some plots of the distirbution of correlations 
+####################################################
+
+#Make a version of the data that works nicer with GG plot (wide vs. long)
+afq_cor_table_wide<- melt(afq_cor_table)
+
+#make the plots with ggplot
+ggplot(afq_cor_table, aes(x=afq_cog_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.4, fill="#FF6666")
+  
+ggplot(afq_cor_table, aes(x=afq_phys_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.4, fill="cyan4")
+
+ggplot(afq_cor_table, aes(x=afq_soc_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.5, fill="darkgoldenrod2")
+
+ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_density(alpha=0.25)
+ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_histogram(alpha=0.55)
+ggplot(afq_cor_table_wide,aes(x=variable, y=value, fill=variable)) + geom_boxplot()
 
 ###############################################################################
 ##         Anxiety Pre-Spring Break vs Post-Spring Break Testing             ##
