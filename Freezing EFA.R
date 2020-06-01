@@ -33,6 +33,9 @@ library(janitor)
 ##Import data##
 freezing_raw<-read.csv(file.choose())
 
+## Import Age of Participants
+
+Age_1053<-read.csv(file.choose())
 
 ######################################
 ## data cleaning - removing columns ##
@@ -52,21 +55,25 @@ freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_for
 ## clear white space in first and last name columns 
 freezing_raw$con_fn<-trimws(freezing_raw$con_fn)
 freezing_raw$con_ln<-trimws(freezing_raw$con_ln)
+Age_1053$first_name<-trimws(Age_1053$first_name)
+Age_1053$last_name<-trimws(Age_1053$last_name)
 
 ## Uniting first name and last name into one column ##
 freezing_raw<-tidyr::unite(freezing_raw, name, con_fn:con_ln, sep = " ", remove = TRUE)
-
+Age_1053<-tidyr::unite(Age_1053, name, first_name:last_name, sep = " ", remove = TRUE)
 
 ## Convert name column to character
 freezing_raw$name <- as.character(freezing_raw$name)
-
+Age_1053$name <- as.character(Age_1053$name)
 
 ### Make sure conversion worked - diagnostic steps ###
 ## examine the class of name column
 typeof(freezing_raw$name)
+typeof(Age_1053$name)
 
 ## examine the structure of name column
 str(freezing_raw$name)
+
 
 
 ## specifying column index 390 = exclusion of any incomplete data ##
@@ -77,6 +84,73 @@ freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 ### Generate data set for only distinct entries
 freezing_raw_d<-freezing_raw %>%
   dplyr::distinct(name, .keep_all = TRUE)
+
+
+## Add Age column to Distinct Entry Data Set
+
+freezing_raw_d$age<-Age_1053$age
+
+## Reorder columns
+
+freezing_raw_d<- freezing_raw_d[,c(1,2,395,4:394)]
+
+save(freezing_raw_d, file = "freezing_raw_d.RData")
+save(age_18,file = "age_18.RData")
+save(age_19,file = "age_19.RData")
+save(age_20,file = "age_20.RData")
+save(age_21,file = "age_21.RData")
+save(age_22plus,file = "age_22plus.RData")
+
+
+## Plot Age vs Various Scores
+
+plot(freezing_raw_d$pswq_total, freezing_raw_d$age, main="Age & Worry",
+     xlab="PSWQ Total", ylab="Age", pch=19)
+
+plot(freezing_raw_d$masq_aa_total, freezing_raw_d$age, main="Age & Anxious Arousal",
+     xlab="Anxious Arousal Total", ylab="Age", pch=19)
+
+plot(freezing_raw_d$masq_ad_total, freezing_raw_d$age, main="Age & Anhedonic Depression",
+     xlab="Anhedonic Depression Total", ylab="Age", pch=19)
+
+
+## Group participants by age
+
+age_18<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==18)
+age_19<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==19)
+age_20<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==20)
+age_21<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==21)
+age_22plus<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age>=22)
+
+## T-test for group differences
+
+psych::describe(age_18$pswq_total)
+psych::describe(age_19$pswq_total)
+psych::describe(age_20$pswq_total)
+psych::describe(age_21$pswq_total)
+psych::describe(age_22plus$pswq_total)
+
+## Group in order
+
+freezing_raw_d$group <- ordered(freezing_raw_d$age,
+                         levels = c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27"))
+
+group_by(freezing_raw_d, group) %>%
+  summarise(
+    count = n(),
+    mean = mean(pswq_total, na.rm = TRUE),
+    sd = sd(pswq_total, na.rm = TRUE)
+  )
+
+# Compute the various analyses of variance
+res.aov <- aov(pswq_total ~ group, data = freezing_raw_d)
+# Summary of the analysis
+summary(res.aov)
 
 ### ############################################# ###
 ### Generate data sets of all repeat participants ###
@@ -109,11 +183,12 @@ T2_dup<-duplicated %>%
 T2_dup<-T2_dup %>%
   dplyr::filter(!duplicated(name))
 
-## Create HPE and LPE totals for MASQ scores in T1 & T2
+## Create HPE and LPE totals for MASQ_ad scores in T1 & T2
 T1_dup$MASQ_HPE_total<- rowSums(T1_dup[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
 T1_dup$MASQ_LPE_total<- rowSums(T1_dup[,c(102,97,94,91,100,107,112,124)])
 T2_dup$MASQ_HPE_total<- rowSums(T2_dup[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
 T2_dup$MASQ_LPE_total<- rowSums(T2_dup[,c(102,97,94,91,100,107,112,124)])
+
 
 psych::describe(T1_dup$MASQ_HPE_total)
 psych::describe(T2_dup$MASQ_HPE_total)
@@ -175,7 +250,9 @@ psych::describe(afq_endorsement$afq_21)
 psych::describe(afq_endorsement$afq_23)
 
 
-
+## Extract Freezing Item Reponses ##
+afq<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afq_soc_total)
 
 
 
@@ -197,9 +274,7 @@ hist(freezing_raw_d$afq_soc_total)
 summary(freezing_raw_d$afq_soc_total)
 describe(freezing_raw_d$afq_soc_total)
 
-## Extract Freezing Item Reponses ##
-afq<-freezing_raw_d %>%
-  dplyr::select(afqs_1:afq_soc_total)
+
 
 ## Visualize Correlations - each item to total factor score ##
 ?pairs.panels
@@ -406,14 +481,530 @@ pairs.panels(afq[,c(29,70:72)],
              density = TRUE,  # show density plots
              ellipses = TRUE # show correlation ellipses
 )
+###########################################################################################
+## Visualize Correlations between AFQ items & MASQ/PSWQ- each item to total factor score ##
+###########################################################################################
 
+## Add AFQ Total, PSWQ Total and MASQ Totals to the AFQ dataset
+
+afq$pswq_total<-freezing_raw_d$pswq_total
+afq$masq_aa_total<-freezing_raw_d$masq_aa_total
+afq$afq_total<-rowSums(afq[,c(70:72)])
+
+## Reorder columns ##
+afq<- afq[,c(1:72,76,73:75)]
+
+
+## Visualize Correlations
+
+pairs.panels(afq[,c(1,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(2,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(3,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(4,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(5,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(6,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(7,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(8,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(9,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(10,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(11,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(12,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(13,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(14,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(15,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(16,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(17,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(18,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(19,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(20,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(21,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(22,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(23,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(24,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(25,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(26,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(27,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(28,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(29,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(30,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(31,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(32,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(33,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(34,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(35,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(36,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(37,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(38,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(39,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(40,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(41,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(42,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(43,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(44,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(45,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(46,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(47,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(48,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(49,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(50,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(51,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(52,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(53,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(54,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(55,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(56,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(57,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(58,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(59,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(60,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(61,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(62,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(63,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(64,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(65,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(66,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(67,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(68,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+pairs.panels(afq[,c(69,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
 
 
 ##################################################
 #### Get comparison of ASI, MASQ AA, and PSWQ ####
 ##################################################
 
-pairs.panels(freezing_raw_d[,c(22,39,125,280:282)], 
+pairs.panels(freezing_raw_d[,c(22,39,125,282:284,397)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+###################################################################
+####   Get comparison of ASI, MASQ AA, and PSWQ to AFQ TOTAL   ####
+###################################################################
+
+## Score AFQ total
+
+freezing_raw_d$afq_total <- rowSums(freezing_raw_d[, c(282:284)])
+
+psych::describe(freezing_raw_d$afq_total)
+view(freezing_raw_d$afq_total)
+
+## Get Comparison
+pairs.panels(freezing_raw_d[,c(22,39,125,397)], 
              method = "pearson", # correlation method
              hist.col = "#00AFBB",
              density = TRUE,  # show density plots
@@ -426,11 +1017,13 @@ pairs.panels(freezing_raw_d[,c(22,39,125,280:282)],
 
 freezing_raw_d$brief_total <- rowSums(freezing_raw_d[, c(317:392)])
 
+
+
 ##################################################
 #### Get comparison of RRQ, SIAS, and Brief ######
 ##################################################
 
-pairs.panels(freezing_raw_d[,c(64,85,393,280:282)], 
+pairs.panels(freezing_raw_d[,c(64,85,396,280:282)], 
              method = "pearson", # correlation method
              hist.col = "#00AFBB",
              density = TRUE,  # show density plots
@@ -803,6 +1396,11 @@ afq_cor_table<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8
 ## clear item column
 
 afq_cor_table<-afq_cor_table[,-1]
+
+## View Histograms of Correlations
+hist(afq_cor_table$afq_cog_total)
+hist(afq_cor_table$afq_phys_total)
+hist(afq_cor_table$afq_soc_total)
 
 write_tsv(afq_cor_table, "AFQ_Correlations")
 
