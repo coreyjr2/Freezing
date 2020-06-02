@@ -3,6 +3,8 @@
 ##############################
 
 
+
+
 ###############################
 ## install relevant packages ##
 ###############################
@@ -29,6 +31,9 @@ install.packages("ggpubr")
 library(ggpubr)
 install.packages("janitor")
 library(janitor)
+install.packages("lubridate")
+library(lubridate)
+
 
 ##Import data##
 freezing_raw<-read.csv(file.choose())
@@ -92,16 +97,53 @@ freezing_raw_d$age<-Age_1053$age
 
 ## Reorder columns
 
-freezing_raw_d<- freezing_raw_d[,c(1,2,395,4:394)]
-
-save(freezing_raw_d, file = "freezing_raw_d.RData")
-save(age_18,file = "age_18.RData")
-save(age_19,file = "age_19.RData")
-save(age_20,file = "age_20.RData")
-save(age_21,file = "age_21.RData")
-save(age_22plus,file = "age_22plus.RData")
+freezing_raw_d<- freezing_raw_d[,c(1,2,395,3:394)]
 
 
+## Depression scores by calendar date
+
+# convert format of con date
+freezing_raw_d$con_date<-mdy(freezing_raw_d$con_date)
+typeof(freezing_raw_d$con_date)
+
+# Remove outliers
+freezing_raw_d_age <- freezing_raw_d %>%
+  dplyr::filter (con_date >= "2020-01-31") %>%
+  dplyr::filter (con_date <= "2020-05-31")
+
+typeof(freezing_raw_d_age$age)
+
+## Create Linear Model
+fit<-lm(freezing_raw_d_age$con_date~freezing_raw_d_age$masq_ad_total)
+plot(fit)
+anova(fit)
+coefficients(fit)
+
+## Plot
+ggplot(freezing_raw_d_age, aes(x=con_date, y=masq_ad_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+freezing_raw_d_age$con_date<-as.Date(freezing_raw_d_age$con_date)
+freezing_raw_d_age$age<-as.factor(freezing_raw_d_age$age)
+
+
+pairs.panels(freezing_raw_d_age[,c(4,127)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+library(psych)
+
+group_by(freezing_raw_d_age, con_date) %>%
+  summarise(
+    count = n(),
+    mean = mean(masq_ad_total, na.rm = TRUE),
+    sd = sd(masq_ad_total, na.rm = TRUE)
+  )
 ## Plot Age vs Various Scores
 
 plot(freezing_raw_d$pswq_total, freezing_raw_d$age, main="Age & Worry",
@@ -127,7 +169,16 @@ age_21<-freezing_raw_d %>%
 age_22plus<-freezing_raw_d %>%
   dplyr::filter(freezing_raw_d$age>=22)
 
-## T-test for group differences
+
+## Save for Markdown
+save(freezing_raw_d, file = "freezing_raw_d.RData")
+save(age_18,file = "age_18.RData")
+save(age_19,file = "age_19.RData")
+save(age_20,file = "age_20.RData")
+save(age_21,file = "age_21.RData")
+save(age_22plus,file = "age_22plus.RData")
+
+## Check for differences by age
 
 psych::describe(age_18$pswq_total)
 psych::describe(age_19$pswq_total)
@@ -135,12 +186,33 @@ psych::describe(age_20$pswq_total)
 psych::describe(age_21$pswq_total)
 psych::describe(age_22plus$pswq_total)
 
+## Recode Ages equal to or higher than 22
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(age_new=case_when(
+    age %in% 18 ~ "18",
+    age %in% 19 ~ "19",
+    age %in% 20 ~ "20",
+    age %in% 21 ~ "21",
+    age %in% 22 ~ "22",
+    age %in% 23:27 ~ "23+"
+  ))
+head(freezing_raw_d_age)
+
+
 ## Group in order
 
 freezing_raw_d$group <- ordered(freezing_raw_d$age,
-                         levels = c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27"))
+                         levels = c("18", "19", "20", "21", "22"+"23+"))
 
-group_by(freezing_raw_d, group) %>%
+
+##install.packages("forcats")
+##library(forcats)
+##freezing_raw_d$age <- as.factor(freezing_raw_d$age)
+##freezing_raw_d_age<-fct_collapse(freezing_raw_d$age, "18" == "18", "19" == "19", "20" == "20", "21" == "21", "22+" == c("22", "23", "24", "25", "26", "27"))
+
+## Age & Worry
+group_by(freezing_raw_d_age, age_new) %>%
   summarise(
     count = n(),
     mean = mean(pswq_total, na.rm = TRUE),
@@ -148,7 +220,20 @@ group_by(freezing_raw_d, group) %>%
   )
 
 # Compute the various analyses of variance
-res.aov <- aov(pswq_total ~ group, data = freezing_raw_d)
+res.aov <- aov(pswq_total ~ age_new, data = freezing_raw_d_age)
+# Summary of the analysis
+summary(res.aov)
+
+## Age & Anxious Arousal
+group_by(freezing_raw_d, group) %>%
+  summarise(
+    count = n(),
+    mean = mean(masq_aa_total, na.rm = TRUE),
+    sd = sd(masq_aa_total, na.rm = TRUE)
+  )
+
+# Compute the various analyses of variance
+res.aov <- aov(masq_aa_total ~ group, data = freezing_raw_d)
 # Summary of the analysis
 summary(res.aov)
 
@@ -228,6 +313,8 @@ t.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, alternative = "less", paired=
 t.test(T1_dup$MASQ_HPE_total, T2_dup$MASQ_HPE_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 t.test(T1_dup$MASQ_LPE_total, T2_dup$MASQ_LPE_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+
+
 
 ###############################################################################
 ##        Rational Scale Development - Item Test Correlations                ##
@@ -1471,6 +1558,16 @@ t.test(pre_sb$MASQ_LPE_total, post_sb$MASQ_LPE_total, alternative = "less", var.
 t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
 
 
+############################################################
+## Compare Repeated Participants to Distinct Participants ##
+############################################################
+
+t.test(pre_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(post_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
+t.test(post_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(post_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
 
 
 save(afq, file = "afq.RData")
@@ -1549,7 +1646,12 @@ efa.obl.6<-fa(efa_freeze, nfactors = 6, rotate = "oblimin")
 print(efa.obl.6, cut=.5, sort=T)
 
 efa.obl.7<-fa(efa_freeze, nfactors = 7, rotate = "oblimin")
-print(efa.obl.7, cut=.4, sort=T)
+print(efa.obl.7, cut=.6, sort=T)
+
+efa.obl.8<-fa(efa_freeze, nfactors = 8, rotate = "oblimin")
+print(efa.obl.8, cut=.4, sort=T)
+
+
 
 ## Let's make this easier to read and sort by loading above .3 for each factor ##
 print(efa.obl, cut=.5)
@@ -1571,3 +1673,47 @@ fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
   #dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
 #fa.parallel(efa_df, fm = 'minres', fa = 'fa', plot = FALSE)
 #fa(efa_df,nfactors=11,rotate="oblimin",fm="minres")
+
+
+
+
+
+
+
+
+########################################
+###   Confirmatory Factor Analysis   ###
+########################################
+
+
+Freeze.model <- ' 
+cognitive  =~ afqs_1 + afqs_2 + afqs_3 + afqs_4 + afqs_5 + afqs_6 + afqs_7 + afqs_8 + afqs_9 +
+              afqs_10 + afqs_11 + afqs_12 + afqs_13 + afqs_14 + afqs_15 + afqs_16 + afqs_17 + 
+              afqs_18 + afqs_19 + afqs_20 + afqs_21 + afqs_22 + afqs_23 + afqs_24 + afqs_25 +
+              afqs_26 + afqs_27 + afqs_28
+physical =~ afqs_30 + afqs_31 + afqs_32 + afqs_33 + afqs_34 + afqs_35 + afqs_36 + afqs_37 + afqs_38 +
+              afqs_39 + afqs_40 + afqs_41 + afqs_42 + afqs_43 + afqs_44 + afqs_45 + afqs_46 + 
+              afqs_47 + afqs_48 + afqs_49 + afqs_50 + afqs_51 + afqs_52 + afqs_53 + afqs_54 +
+              afqs_55 + afqs_56 + afqs_57
+social   =~ afqs_58 + afqs_59 + afqs_60 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 + afqs_66 +
+              afqs_67 + afqs_68 + afqs_69 + afqs_70
+'
+cfa(Freeze.model, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
+summary(cfa.3.fit, fit.measures = T, standardized = T)
+
+## Let's try a 2 factor model
+Freeze.model.2 <- ' 
+cogphys  =~ afqs_1 + afqs_2 + afqs_3 + afqs_4 + afqs_5 + afqs_6 + afqs_7 + afqs_8 + afqs_9 +
+              afqs_10 + afqs_11 + afqs_12 + afqs_13 + afqs_14 + afqs_15 + afqs_16 + afqs_17 + 
+              afqs_18 + afqs_19 + afqs_20 + afqs_21 + afqs_22 + afqs_23 + afqs_24 + afqs_25 +
+              afqs_26 + afqs_27 + afqs_28 + afqs_30 + afqs_31 + afqs_32 + afqs_33 + afqs_34 + afqs_35 + afqs_36 + afqs_37 + afqs_38 +
+              afqs_39 + afqs_40 + afqs_41 + afqs_42 + afqs_43 + afqs_44 + afqs_45 + afqs_46 + 
+              afqs_47 + afqs_48 + afqs_49 + afqs_50 + afqs_51 + afqs_52 + afqs_53 + afqs_54 +
+              afqs_55 + afqs_56 + afqs_57
+social   =~ afqs_58 + afqs_59 + afqs_60 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 + afqs_66 +
+              afqs_67 + afqs_68 + afqs_69 + afqs_70
+'
+
+cfa.2.fit<-cfa(Freeze.model.2, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
+summary(cfa.2.fit, fit.measures = T, standardized = T)
+
