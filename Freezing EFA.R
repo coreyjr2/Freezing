@@ -113,6 +113,47 @@ freezing_raw_d_age <- freezing_raw_d %>%
 
 typeof(freezing_raw_d_age$age)
 
+## Add variable specifying pre and post spring break Separate groups by consent date
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(timepoint=case_when(
+    record_id %in% 1:539 ~ "pre-spring break",
+    record_id %in% 540:758 ~ "post-spring break",
+  ))
+
+## Reorder columns
+freezing_raw_d_age<- freezing_raw_d_age[,c(1:4,396, 5:395)]
+
+## Add duplicated column
+T1_dup_yes<-T1_dup
+T1_dup_yes<-T1_dup_yes %>%
+  dplyr::mutate(duplicated = "yes")
+
+freezing_raw_d_age<-dplyr::full_join(freezing_raw_d_age, T1_dup_yes, by = "record_id")
+freezing_raw_d_age<-freezing_raw_d_age[,c(1:396,791)]
+freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
+
+
+freezing_raw_d_age$duplicated<-replace_na(freezing_raw_d_age$duplicated, replace = "no")
+
+
+dep_plot <- freezing_raw_d_age %>%
+  dplyr::filter(timepoint == "post-spring break" & duplicated == "yes"| timepoint == "pre-spring break")
+ 
+
+## Plot Depression Scores
+ggplot(dep_plot, aes(x=con_date.x, y=masq_ad_total.x, color = duplicated)) +
+  geom_point(shape=10) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+
+ggplot(T1_dup, aes(x=con_date, y=masq_ad_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
 ## Create Linear Model
 fit<-lm(freezing_raw_d_age$con_date~freezing_raw_d_age$masq_ad_total)
 plot(fit)
@@ -280,6 +321,15 @@ psych::describe(T2_dup$MASQ_HPE_total)
 psych::describe(T1_dup$MASQ_LPE_total)
 psych::describe(T2_dup$MASQ_LPE_total)
 
+## Check approach avoidance for repeated participants
+
+psych::describe(T1_dup$atq_total)
+psych::describe(pre_sb$atq_total)
+
+install.packages("effectsize")
+library(effectsize)
+cohen.D(T1_dup$atq_total, pre_sb$atq_total, method = "pooled", mu = 0, formula = NULL )
+
 ## Test for Normality & check descriptive stats
 ggqqplot(T1_dup$asi_total)
 summary(T1_dup$asi_total)
@@ -315,6 +365,88 @@ t.test(T1_dup$MASQ_LPE_total, T2_dup$MASQ_LPE_total, alternative = "less", paire
 t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 
 
+###############################################################################
+##     Anxiety/Depression Pre-Spring Break vs Post-Spring Break Testing      ##
+############################################################################### 
+
+## Create MASQ High Positive Emotion (HPE) and Low Positive Emotion (LPE) columns
+
+freezing_raw_d$MASQ_HPE_total<- rowSums(freezing_raw_d[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
+freezing_raw_d$MASQ_LPE_total<- rowSums( freezing_raw_d[,c(102,97,94,91,100,107,112,124)])
+
+
+## Create pre-spring break & post-spring break groups
+pre_sb<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$record_id < 540)
+
+post_sb<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$record_id >= 540)
+
+
+## Create Low Positive Affect and Depressive Mood for pre and post spring break groups
+
+pre_sb$MASQ_HPE_total<- rowSums(pre_sb[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
+post_sb$MASQ_LPE_total<- rowSums(post_sb[,c(102,97,94,91,100,107,112,124)])
+
+psych::describe(pre_sb$MASQ_HPE_total)
+psych::describe(post_sb$MASQ_HPE_total)
+psych::describe(pre_sb$MASQ_LPE_total)
+psych::describe(post_sb$MASQ_LPE_total)
+
+
+## Although our sample size is large enough, test for normality ##
+ggqqplot(pre_sb$asi_total)
+ggqqplot(pre_sb$masq_aa_total)
+ggqqplot(pre_sb$masq_ad_total)
+ggqqplot(pre_sb$pswq_total)
+
+
+ggqqplot(post_sb$asi_total)
+ggqqplot(post_sb$masq_aa_total)
+ggqqplot(post_sb$masq_ad_total)
+ggqqplot(post_sb$pswq_total)
+
+## Check for variance ##
+
+var.test(pre_sb$asi_total, post_sb$asi_total, alternative =  "two.sided")
+hist(pre_sb$asi_total)
+hist(post_sb$asi_total)
+
+var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative =  "two.sided")
+hist(pre_sb$masq_aa_total)
+hist(post_sb$masq_aa_total)
+
+var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative =  "two.sided")
+par(mfrow=c(1,2))
+hist(pre_sb$masq_ad_total)
+hist(post_sb$masq_ad_total)
+
+var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative =  "two.sided")
+
+## T-Test for Anxiety Totals ##
+
+t.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$MASQ_HPE_total, post_sb$MASQ_HPE_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$MASQ_LPE_total, post_sb$MASQ_LPE_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
+
+
+############################################################
+## Compare Repeated Participants to Distinct Participants ##
+############################################################
+
+t.test(pre_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(post_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
+t.test(post_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(post_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
+
+
+save(afq, file = "afq.RData")
+save(afq_endorsement, file = "afq_endorsement.Rdata")
 
 ###############################################################################
 ##        Rational Scale Development - Item Test Correlations                ##
@@ -1493,85 +1625,6 @@ write_tsv(afq_cor_table, "AFQ_Correlations")
 
 
 
-###############################################################################
-##     Anxiety/Depression Pre-Spring Break vs Post-Spring Break Testing      ##
-############################################################################### 
-
-## Create MASQ High Positive Emotion (HPE) and Low Positive Emotion (LPE) columns
-
-freezing_raw_d$MASQ_HPE_total<- rowSums(freezing_raw_d[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
-freezing_raw_d$MASQ_LPE_total<- rowSums( freezing_raw_d[,c(102,97,94,91,100,107,112,124)])
-
-
-## Create pre-spring break & post-spring break groups
-pre_sb<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$record_id < 540)
-
-post_sb<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$record_id >= 540)
-
-pre_sb$MASQ_HPE_total<- rowSums(pre_sb[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
-post_sb$MASQ_LPE_total<- rowSums(post_sb[,c(102,97,94,91,100,107,112,124)])
-
-psych::describe(pre_sb$MASQ_HPE_total)
-psych::describe(post_sb$MASQ_HPE_total)
-psych::describe(pre_sb$MASQ_LPE_total)
-psych::describe(post_sb$MASQ_LPE_total)
-
-
-## Although our sample size is large enough, test for normality ##
-ggqqplot(pre_sb$asi_total)
-ggqqplot(pre_sb$masq_aa_total)
-ggqqplot(pre_sb$masq_ad_total)
-ggqqplot(pre_sb$pswq_total)
-
-
-ggqqplot(post_sb$asi_total)
-ggqqplot(post_sb$masq_aa_total)
-ggqqplot(post_sb$masq_ad_total)
-ggqqplot(post_sb$pswq_total)
-
-## Check for variance ##
-
-var.test(pre_sb$asi_total, post_sb$asi_total, alternative =  "two.sided")
-hist(pre_sb$asi_total)
-hist(post_sb$asi_total)
-
-var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative =  "two.sided")
-hist(pre_sb$masq_aa_total)
-hist(post_sb$masq_aa_total)
-
-var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative =  "two.sided")
-par(mfrow=c(1,2))
-hist(pre_sb$masq_ad_total)
-hist(post_sb$masq_ad_total)
-
-var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative =  "two.sided")
-
-## T-Test for Anxiety Totals ##
-
-t.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$MASQ_HPE_total, post_sb$MASQ_HPE_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$MASQ_LPE_total, post_sb$MASQ_LPE_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
-
-
-############################################################
-## Compare Repeated Participants to Distinct Participants ##
-############################################################
-
-t.test(pre_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(pre_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
-t.test(pre_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
-
-
-save(afq, file = "afq.RData")
-save(afq_endorsement, file = "afq_endorsement.Rdata")
 
 ###################################################
 ##     Traditional EFA for Freezing (AFQ)        ##
@@ -1627,29 +1680,29 @@ print(efa.obl.1)
 
 
 efa.obl.2<-fa(efa_freeze, nfactors = 2, rotate = "oblimin")
-print(efa.obl.2, cut=.5, sort=T)
+print(efa.obl.2, cut=.6, sort=T)
 
 efa.obl.3<-fa(efa_freeze, nfactors = 3, rotate = "oblimin")
-print(efa.obl.3, cut=.5, sort = T)
+print(efa.obl.3, cut=.6, sort = T)
 
 factor.congruence(efa.obl.2,efa.obl.3)
 
 efa.obl.4<-fa(efa_freeze, nfactors = 4, rotate = "oblimin")
-print(efa.obl.4, cut=.5, sort = T)
+print(efa.obl.4, cut=.6, sort = T)
 
 factor.congruence(efa.obl.3,efa.obl.4)
 
 efa.obl.5<-fa(efa_freeze, nfactors = 5, rotate = "oblimin")
-print(efa.obl.5, cut=.5, sort=T)
+print(efa.obl.5, cut=.6, sort=T)
 
 efa.obl.6<-fa(efa_freeze, nfactors = 6, rotate = "oblimin")
-print(efa.obl.6, cut=.5, sort=T)
+print(efa.obl.6, cut=.6, sort=T)
 
 efa.obl.7<-fa(efa_freeze, nfactors = 7, rotate = "oblimin")
 print(efa.obl.7, cut=.6, sort=T)
 
 efa.obl.8<-fa(efa_freeze, nfactors = 8, rotate = "oblimin")
-print(efa.obl.8, cut=.4, sort=T)
+print(efa.obl.8, cut=.6, sort=T)
 
 
 
@@ -1685,7 +1738,7 @@ fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
 ###   Confirmatory Factor Analysis   ###
 ########################################
 
-
+## Based on theoretical development
 Freeze.model <- ' 
 cognitive  =~ afqs_1 + afqs_2 + afqs_3 + afqs_4 + afqs_5 + afqs_6 + afqs_7 + afqs_8 + afqs_9 +
               afqs_10 + afqs_11 + afqs_12 + afqs_13 + afqs_14 + afqs_15 + afqs_16 + afqs_17 + 
@@ -1700,8 +1753,8 @@ social   =~ afqs_58 + afqs_59 + afqs_60 + afqs_61 + afqs_62 + afqs_63 + afqs_64 
 '
 cfa(Freeze.model, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
 summary(cfa.3.fit, fit.measures = T, standardized = T)
-
-## Let's try a 2 factor model
+ 
+## Let's try the theoretical 2 factor model
 Freeze.model.2 <- ' 
 cogphys  =~ afqs_1 + afqs_2 + afqs_3 + afqs_4 + afqs_5 + afqs_6 + afqs_7 + afqs_8 + afqs_9 +
               afqs_10 + afqs_11 + afqs_12 + afqs_13 + afqs_14 + afqs_15 + afqs_16 + afqs_17 + 
@@ -1717,3 +1770,40 @@ social   =~ afqs_58 + afqs_59 + afqs_60 + afqs_61 + afqs_62 + afqs_63 + afqs_64 
 cfa.2.fit<-cfa(Freeze.model.2, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
 summary(cfa.2.fit, fit.measures = T, standardized = T)
 
+
+## Now, let's listen to the data. According to our EFA....
+
+## Let's try a 3 factor model, (note the .6 cutoff)
+freeze.model.3 <- '
+physical stopping =~ afqs_32 + afqs_33 + afqs_34 + afqs_35 + afqs_36 + afqs_37 + afqs_51
+cognitive overload =~ afqs_2 + afqs_8 + afqs_9 + afqs_10 + afqs_11 + afqs_12 + afqs_15 + afqs_16 + afqs_17 + afqs_18
+                      + afqs_28
+social =~ afqs_58 + afqs_59 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 + afqs_66 +
+          afqs_67 + afqs_68 + afqs_69 + afqs_70
+'
+cfa.3.fit<-cfa(freeze.model.3, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
+summary(cfa.3.fit, fit.measures = T, standardized = T)
+
+## Let's try a 5 factor model, (note the .6 cutoff)
+freeze.model.5 <- '
+panic =~ afqs_38 + afqs_44 + afqs_45 + afqs_46 + afqs_53
+cognitive overload =~ afqs_2 + afqs_8 + afqs_9 + afqs_18
+physical stopping =~ afqs_32 + afqs_33 + afqs_34 + afqs_35 + afqs_36 + afqs_37 
+recovery =~ afqs_25 + afqs_26 + afqs_27 
+social =~ afqs_58 + afqs_59 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 + afqs_66 +
+          afqs_67 + afqs_68 + afqs_69 + afqs_70
+'
+cfa.5.fit<-cfa(freeze.model.5, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
+summary(cfa.5.fit, fit.measures = T, standardized = T)
+
+## Let's try a 7 factor model, (note the .6 cutoff)
+freeze.model.7<- '
+cognitive  =~ afqs_2 + afqs_8 + afqs_9 + afqs_18 
+physical =~ afqs_32 + afqs_33 + afqs_34 + afqs_35 + afqs_36 + afqs_37 
+panic =~ afqs_38 + afqs_45
+recovery =~ afqs_25 + afqs_26 + afqs_27 
+social   =~ afqs_58 + afqs_59 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 + afqs_66 +
+  afqs_67 + afqs_68 + afqs_69 + afqs_70
+  '
+cfa.7.fit<-cfa(freeze.model.7, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
+summary(cfa.7.fit, fit.measures = T, standardized = T)
