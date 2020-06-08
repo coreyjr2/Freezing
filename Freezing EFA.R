@@ -33,6 +33,8 @@ install.packages("janitor")
 library(janitor)
 install.packages("lubridate")
 library(lubridate)
+install.packages("psy")
+library(psy)
 
 
 ##Import data##
@@ -136,6 +138,11 @@ freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
 
 freezing_raw_d_age$duplicated<-replace_na(freezing_raw_d_age$duplicated, replace = "no")
 
+## Plot Depression Scores
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color = duplicated)) +
+  geom_point(shape=10) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
 
 dep_plot <- freezing_raw_d_age %>%
   dplyr::filter(timepoint == "post-spring break" & duplicated == "yes"| timepoint == "pre-spring break")
@@ -161,7 +168,7 @@ anova(fit)
 coefficients(fit)
 
 ## Plot
-ggplot(freezing_raw_d_age, aes(x=con_date, y=masq_ad_total, color=age_new)) +
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_new)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
@@ -207,9 +214,10 @@ age_20<-freezing_raw_d %>%
   dplyr::filter(freezing_raw_d$age==20)
 age_21<-freezing_raw_d %>%
   dplyr::filter(freezing_raw_d$age==21)
-age_22plus<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age>=22)
-
+age_22<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==22)
+age_23plus<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age>=23)
 
 ## Save for Markdown
 save(freezing_raw_d, file = "freezing_raw_d.RData")
@@ -217,15 +225,18 @@ save(age_18,file = "age_18.RData")
 save(age_19,file = "age_19.RData")
 save(age_20,file = "age_20.RData")
 save(age_21,file = "age_21.RData")
-save(age_22plus,file = "age_22plus.RData")
-
+save(age_22,file = "age_22.RData")
+save(age_23plus,file = "age_23plus.RData")
+save(dep_plot, file = "dep_plot.RData")
+save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
+save(T1_dup, file = "T1_dup.RData")
 ## Check for differences by age
 
 psych::describe(age_18$pswq_total)
 psych::describe(age_19$pswq_total)
 psych::describe(age_20$pswq_total)
 psych::describe(age_21$pswq_total)
-psych::describe(age_22plus$pswq_total)
+psych::describe(age_22$pswq_total)
 
 ## Recode Ages equal to or higher than 22
 
@@ -1645,6 +1656,7 @@ complete.cases(freezing_raw_d)
 efa_freeze<-freezing_raw_d %>%
   dplyr::select(afqs_1:afqs_70)
 
+save(efa_freeze, file = "efa_freeze.RData")
 ## Determine number of factors to extract ##
 
 ## Get eigenvalues ##
@@ -1683,7 +1695,7 @@ efa.obl.2<-fa(efa_freeze, nfactors = 2, rotate = "oblimin")
 print(efa.obl.2, cut=.6, sort=T)
 
 efa.obl.3<-fa(efa_freeze, nfactors = 3, rotate = "oblimin")
-print(efa.obl.3, cut=.6, sort = T)
+print(efa.obl.3, cut=.1, sort = T)
 
 factor.congruence(efa.obl.2,efa.obl.3)
 
@@ -1711,7 +1723,7 @@ print(efa.obl, cut=.5)
 print(efa.obl.5, cut=.5)
 
 # how similar are these solutions? Let's check with a congruence coefficient ##
-factor.congruence(efa.obl.5,efa.obl.1)
+factor.congruence(efa.obl.5,efa.obl.7)
 
 
 
@@ -1730,8 +1742,159 @@ fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
 
 
 
+## Check Reliability Measure for Random Item Sets
+
+# Total
+afq.items<-afq[,c(1:69)]
+alpha(afq.items)
+
+# Cognitive
+afq.cog.items<-afq[,c(1:28)]
+alpha(afq.cog.items)
+
+# Physical
+afq.phys.items<-afq[,c(29:56)]
+cronbach(afq.phys.items)
+
+# Physical + Cognitive
+afq.cogphys.items<-afq[,c(1:56)]
+cronbach(afq.cogphys.items)
+
+# Social
+afq.soc.items<-afq[,c(57:69)]
+cronbach(afq.soc.items)
+
+# Phys + Soc
+afq.physoc.items<-afq[,c(29:69)]
+cronbach(afq.physoc.items)
 
 
+afq.5fm<-afq[,c(2,8,9,18,25,26,27,31:37,43:45,52,57,58,60:69)]
+cronbach(afq.5fm)
+
+###################################
+##   Pure Question Set Testing   ##
+###################################
+
+## These items were extracted based on the following criteria: 
+## Pearson Correlation higher than .5 to the AFQ Total Score &
+## Pearson Correlation lower than .35 to the PSWQ Total Score &
+## Pearson Correlation lower than .35 to the MASQ_aa Total Score
+
+afq.pure.items<-afq[,c(1,3,7,8,9,11,12,14,15,18,21,24,29,30,37,38,39,41,42,44,50,52,53,57,58,59,63:69)]
+
+## Make Pure Total
+afq$pure_total<-rowSums(afq[,c(1,3,7,8,9,11,12,14,15,18,21,24,29,30,37,38,39,41,42,44,50,52,53,57,58,59,63:69)])
+
+## Generate list of pearson coefficients between items and totals ##
+## make correlation matrices objects
+afq_1_cor<-as.data.frame(cor(afq[, c("afqs_1", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_3_cor<-as.data.frame(cor(afq[, c("afqs_3", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_7_cor<-as.data.frame(cor(afq[, c("afqs_7", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_8_cor<-as.data.frame(cor(afq[, c("afqs_8", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_9_cor<-as.data.frame(cor(afq[, c("afqs_9", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_11_cor<-as.data.frame(cor(afq[, c("afqs_11", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_12_cor<-as.data.frame(cor(afq[, c("afqs_12", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_14_cor<-as.data.frame(cor(afq[, c("afqs_14", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_15_cor<-as.data.frame(cor(afq[, c("afqs_15", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_18_cor<-as.data.frame(cor(afq[, c("afqs_18", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_21_cor<-as.data.frame(cor(afq[, c("afqs_21", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_24_cor<-as.data.frame(cor(afq[, c("afqs_24", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_29_cor<-as.data.frame(cor(afq[, c("afqs_30", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_30_cor<-as.data.frame(cor(afq[, c("afqs_31", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_37_cor<-as.data.frame(cor(afq[, c("afqs_38", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_38_cor<-as.data.frame(cor(afq[, c("afqs_39", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_39_cor<-as.data.frame(cor(afq[, c("afqs_40", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_41_cor<-as.data.frame(cor(afq[, c("afqs_42", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_42_cor<-as.data.frame(cor(afq[, c("afqs_43", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_44_cor<-as.data.frame(cor(afq[, c("afqs_45", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_50_cor<-as.data.frame(cor(afq[, c("afqs_51", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_52_cor<-as.data.frame(cor(afq[, c("afqs_53", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_53_cor<-as.data.frame(cor(afq[, c("afqs_54", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_57_cor<-as.data.frame(cor(afq[, c("afqs_58", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_58_cor<-as.data.frame(cor(afq[, c("afqs_59", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_59_cor<-as.data.frame(cor(afq[, c("afqs_60", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_63_cor<-as.data.frame(cor(afq[, c("afqs_64", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_64_cor<-as.data.frame(cor(afq[, c("afqs_65", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_65_cor<-as.data.frame(cor(afq[, c("afqs_66", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_66_cor<-as.data.frame(cor(afq[, c("afqs_67", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_67_cor<-as.data.frame(cor(afq[, c("afqs_68", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_68_cor<-as.data.frame(cor(afq[, c("afqs_69", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_69_cor<-as.data.frame(cor(afq[, c("afqs_70", "pure_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+
+## Remove Item Colum
+afq_1_cor<-afq_1_cor[,-1]
+afq_3_cor<-afq_3_cor[,-1]
+afq_7_cor<-afq_7_cor[,-1]
+afq_8_cor<-afq_8_cor[,-1]
+afq_9_cor<-afq_9_cor[,-1]
+afq_11_cor<-afq_11_cor[,-1]
+afq_12_cor<-afq_12_cor[,-1]
+afq_14_cor<-afq_14_cor[,-1]
+afq_15_cor<-afq_15_cor[,-1]
+afq_18_cor<-afq_18_cor[,-1]
+afq_21_cor<-afq_21_cor[,-1]
+afq_24_cor<-afq_24_cor[,-1]
+afq_29_cor<-afq_29_cor[,-1]
+afq_30_cor<-afq_30_cor[,-1]
+afq_37_cor<-afq_37_cor[,-1]
+afq_38_cor<-afq_38_cor[,-1]
+afq_39_cor<-afq_39_cor[,-1]
+afq_41_cor<-afq_41_cor[,-1]
+afq_42_cor<-afq_42_cor[,-1]
+afq_44_cor<-afq_44_cor[,-1]
+afq_50_cor<-afq_50_cor[,-1]
+afq_52_cor<-afq_52_cor[,-1]
+afq_53_cor<-afq_53_cor[,-1]
+afq_57_cor<-afq_57_cor[,-1]
+afq_58_cor<-afq_58_cor[,-1]
+afq_59_cor<-afq_59_cor[,-1]
+afq_63_cor<-afq_63_cor[,-1]
+afq_64_cor<-afq_64_cor[,-1]
+afq_65_cor<-afq_65_cor[,-1]
+afq_66_cor<-afq_66_cor[,-1]
+afq_67_cor<-afq_67_cor[,-1]
+afq_68_cor<-afq_68_cor[,-1]
+afq_69_cor<-afq_69_cor[,-1]
+
+
+## append all data frames into one
+
+afqpure_cor_table<- dplyr::bind_rows(afq_1_cor,afq_3_cor,afq_7_cor,afq_8_cor,afq_9_cor,afq_11_cor,afq_12_cor,
+                                     afq_14_cor,afq_15_cor,afq_18_cor,afq_21_cor,afq_24_cor,afq_29_cor,
+                                     afq_30_cor,afq_37_cor,afq_38_cor,afq_39_cor,afq_41_cor,afq_42_cor,afq_44_cor,
+                                     afq_50_cor,afq_52_cor,afq_53_cor,afq_57_cor,afq_58_cor,afq_59_cor,
+                                     afq_63_cor,afq_64_cor,afq_65_cor,afq_66_cor,afq_67_cor,afq_68_cor,afq_69_cor)
+
+## clear total score rows
+ind <- seq(1, nrow(afqpure_cor_table), by=5)
+afqpure_cor_table<-afqpure_cor_table[ind, ]
+
+## Rename Columns
+
+afqpure_cor_table<-afqpure_cor_table %>%
+  rename(pure_cor = pure_total)
+afqpure_cor_table<-afqpure_cor_table %>%
+  rename(afq_total_cor = afq_total)
+afqpure_cor_table<-afqpure_cor_table %>%
+  rename(pswq_cor = pswq_total)
+afqpure_cor_table<-afqpure_cor_table %>%
+  rename(masq_aa_cor = masq_aa_total)
+
+## View Histograms of Correlations
+ggplot(afqpure_cor_table, aes(x=pure_cor)) + geom_histogram(color="darkblue", fill="lightblue")
+ggplot(afqpure_cor_table, aes(x=afq_total_cor)) + geom_histogram(color="darkblue", fill="lightblue")
+ggplot(afqpure_cor_table, aes(x=pswq_cor)) + geom_histogram(color="darkblue", fill="lightblue")
+ggplot(afqpure_cor_table, aes(x=masq_aa_cor)) + geom_histogram(color="darkblue", fill="lightblue")
+
+
+## Visualize Correlations between Pure_total and other totals in AFQ df
+pairs.panels(afq[,c(77,73,74,75)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
 
 
 ########################################
@@ -1751,8 +1914,8 @@ physical =~ afqs_30 + afqs_31 + afqs_32 + afqs_33 + afqs_34 + afqs_35 + afqs_36 
 social   =~ afqs_58 + afqs_59 + afqs_60 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 + afqs_66 +
               afqs_67 + afqs_68 + afqs_69 + afqs_70
 '
-cfa(Freeze.model, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
-summary(cfa.3.fit, fit.measures = T, standardized = T)
+cfa.freeze<-cfa(Freeze.model, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
+summary(cfa.freeze, fit.measures = T, standardized = T)
  
 ## Let's try the theoretical 2 factor model
 Freeze.model.2 <- ' 
