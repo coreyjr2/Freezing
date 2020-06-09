@@ -1,6 +1,6 @@
-##############################
-### Freezing EFA Analysis ###
-##############################
+#######################################################
+### Freezing Questionnaire and Spring Data Analysis ###
+#######################################################
 
 
 
@@ -122,9 +122,21 @@ freezing_raw_d_age<-freezing_raw_d_age %>%
     record_id %in% 1:539 ~ "pre-spring break",
     record_id %in% 540:758 ~ "post-spring break",
   ))
-
 ## Reorder columns
 freezing_raw_d_age<- freezing_raw_d_age[,c(1:4,396, 5:395)]
+
+## Add variable to recode age
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(age_new=case_when(
+    age %in% 18 ~ "18",
+    age %in% 19 ~ "19",
+    age %in% 20 ~ "20",
+    age %in% 21 ~ "21",
+    age %in% 22 ~ "22",
+    age %in% 23:27 ~ "23+"
+  ))
+
 
 ## Add duplicated column
 T1_dup_yes<-T1_dup
@@ -135,7 +147,7 @@ freezing_raw_d_age<-dplyr::full_join(freezing_raw_d_age, T1_dup_yes, by = "recor
 freezing_raw_d_age<-freezing_raw_d_age[,c(1:396,791)]
 freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
 
-
+## Replace NA with "no"
 freezing_raw_d_age$duplicated<-replace_na(freezing_raw_d_age$duplicated, replace = "no")
 
 ## Plot Depression Scores
@@ -186,12 +198,6 @@ pairs.panels(freezing_raw_d_age[,c(4,127)],
 )
 library(psych)
 
-group_by(freezing_raw_d_age, con_date) %>%
-  summarise(
-    count = n(),
-    mean = mean(masq_ad_total, na.rm = TRUE),
-    sd = sd(masq_ad_total, na.rm = TRUE)
-  )
 ## Plot Age vs Various Scores
 
 plot(freezing_raw_d$pswq_total, freezing_raw_d$age, main="Age & Worry",
@@ -204,7 +210,7 @@ plot(freezing_raw_d$masq_ad_total, freezing_raw_d$age, main="Age & Anhedonic Dep
      xlab="Anhedonic Depression Total", ylab="Age", pch=19)
 
 
-## Group participants by age
+## Group participants by age in separate data frames
 
 age_18<-freezing_raw_d %>%
   dplyr::filter(freezing_raw_d$age==18)
@@ -219,17 +225,7 @@ age_22<-freezing_raw_d %>%
 age_23plus<-freezing_raw_d %>%
   dplyr::filter(freezing_raw_d$age>=23)
 
-## Save for Markdown
-save(freezing_raw_d, file = "freezing_raw_d.RData")
-save(age_18,file = "age_18.RData")
-save(age_19,file = "age_19.RData")
-save(age_20,file = "age_20.RData")
-save(age_21,file = "age_21.RData")
-save(age_22,file = "age_22.RData")
-save(age_23plus,file = "age_23plus.RData")
-save(dep_plot, file = "dep_plot.RData")
-save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
-save(T1_dup, file = "T1_dup.RData")
+
 ## Check for differences by age
 
 psych::describe(age_18$pswq_total)
@@ -238,56 +234,53 @@ psych::describe(age_20$pswq_total)
 psych::describe(age_21$pswq_total)
 psych::describe(age_22$pswq_total)
 
-## Recode Ages equal to or higher than 22
+
+
+
+## Visualize Age & Worry
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se = FALSE) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "Age")
+
+
+## Seems like there is an increase in worry by time for ages 21-23+, but a decrease for those <20, let's look into this
 
 freezing_raw_d_age<-freezing_raw_d_age %>%
-  mutate(age_new=case_when(
-    age %in% 18 ~ "18",
-    age %in% 19 ~ "19",
-    age %in% 20 ~ "20",
-    age %in% 21 ~ "21",
-    age %in% 22 ~ "22",
-    age %in% 23:27 ~ "23+"
+  mutate(age_trend=case_when(
+    age %in% 18 ~ "<=20",
+    age %in% 19 ~ "<=20",
+    age %in% 20 ~ "<=20",
+    age %in% 21 ~ ">20",
+    age %in% 22 ~ ">20",
+    age %in% 23:27 ~ ">20"
   ))
-head(freezing_raw_d_age)
+
+## Let's visualize again
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se = FALSE) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "Age")
+
+## Can we run a t.test to compare means?
+
+t.test(pswq_total.x ~ age_trend, data = freezing_raw_d_age)
+
+## Although the mean is higher in the >20 group, we fail to reject the null hypothesis, let's check effect size
+
+# First make data set for each trend
+age_plus20<-freezing_raw_d_age %>%
+  dplyr::filter(freezing_raw_d_age$age_trend==">20")
+
+age_less_eq20<-freezing_raw_d_age %>%
+  dplyr::filter(freezing_raw_d_age$age_trend=="<=20")
 
 
-## Group in order
 
-freezing_raw_d$group <- ordered(freezing_raw_d$age,
-                         levels = c("18", "19", "20", "21", "22"+"23+"))
-
-
-##install.packages("forcats")
-##library(forcats)
-##freezing_raw_d$age <- as.factor(freezing_raw_d$age)
-##freezing_raw_d_age<-fct_collapse(freezing_raw_d$age, "18" == "18", "19" == "19", "20" == "20", "21" == "21", "22+" == c("22", "23", "24", "25", "26", "27"))
-
-## Age & Worry
-group_by(freezing_raw_d_age, age_new) %>%
-  summarise(
-    count = n(),
-    mean = mean(pswq_total, na.rm = TRUE),
-    sd = sd(pswq_total, na.rm = TRUE)
-  )
-
-# Compute the various analyses of variance
-res.aov <- aov(pswq_total ~ age_new, data = freezing_raw_d_age)
-# Summary of the analysis
-summary(res.aov)
-
-## Age & Anxious Arousal
-group_by(freezing_raw_d, group) %>%
-  summarise(
-    count = n(),
-    mean = mean(masq_aa_total, na.rm = TRUE),
-    sd = sd(masq_aa_total, na.rm = TRUE)
-  )
-
-# Compute the various analyses of variance
-res.aov <- aov(masq_aa_total ~ group, data = freezing_raw_d)
-# Summary of the analysis
-summary(res.aov)
 
 ### ############################################# ###
 ### Generate data sets of all repeat participants ###
@@ -334,8 +327,34 @@ psych::describe(T2_dup$MASQ_LPE_total)
 
 ## Check approach avoidance for repeated participants
 
-psych::describe(T1_dup$atq_total)
-psych::describe(pre_sb$atq_total)
+T1_dup$atq_appr<-rowSums(T1_dup[, c(309,311,312,315,317,318)])
+T1_dup$atq_avoi<-rowSums(T1_dup[, c(308,310,313,314,316,319)])
+
+pre_sb$atq_appr<-rowSums(pre_sb[, c(309,311,312,315,317,318)])
+pre_sb$atq_avoi<-rowSums(pre_sb[, c(308,310,313,314,316,319)])
+
+freezing_raw_d_age$atq_appr<-rowSums(freezing_raw_d_age[, c(311,313,314,317,319,320)])
+freezing_raw_d_age$atq_avoi<-rowSums(freezing_raw_d_age[, c(310,312,315,316,318,321)])
+  
+  
+## Calculate Means for each group
+library(plyr)
+library(dplyr)
+atq_avoi_mu <- ddply(freezing_raw_d_age, "duplicated", summarise, grp.mean=mean(atq_avoi)) 
+atq_appr_mu <- ddply(freezing_raw_d_age, "duplicated", summarise, grp.mean=mean(atq_appr)) 
+
+##Visualize repeat vs distinct participant avoidance
+
+ggplot(freezing_raw_d_age, aes(x=atq_avoi, color=duplicated)) + 
+  geom_histogram(binwidth=1, fill="white") +
+  geom_vline(data=atq_avoi_mu, aes(xintercept=grp.mean, color=duplicated),
+             linetype="dashed") +
+  labs(x= "Avoidance Total")
+
+ggplot(freezing_raw_d_age, aes(x=atq_appr, color=duplicated)) + 
+  geom_histogram(binwidth=1, fill="white")+
+  geom_vline(data=atq_appr_mu, aes(xintercept=grp.mean, color=duplicated), linetype="dashed") +
+  labs(x= "Avoidance Total")
 
 install.packages("effectsize")
 library(effectsize)
@@ -1897,6 +1916,20 @@ pairs.panels(afq[,c(77,73,74,75)],
 )
 
 
+## Check reliability of Pure Items
+## reminder we made this df: afq.pure.items<-afq[,c(1,3,7,8,9,11,12,14,15,18,21,24,29,30,37,38,39,41,42,44,50,52,53,57,58,59,63:69)]
+alpha(afq.pure.items)
+
+
+
+
+
+
+
+
+
+
+
 ########################################
 ###   Confirmatory Factor Analysis   ###
 ########################################
@@ -1970,3 +2003,17 @@ social   =~ afqs_58 + afqs_59 + afqs_61 + afqs_62 + afqs_63 + afqs_64 + afqs_65 
   '
 cfa.7.fit<-cfa(freeze.model.7, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
 summary(cfa.7.fit, fit.measures = T, standardized = T)
+
+
+## Save for Markdown
+save(freezing_raw_d, file = "freezing_raw_d.RData")
+save(age_18,file = "age_18.RData")
+save(age_19,file = "age_19.RData")
+save(age_20,file = "age_20.RData")
+save(age_21,file = "age_21.RData")
+save(age_22,file = "age_22.RData")
+save(age_23plus,file = "age_23plus.RData")
+save(dep_plot, file = "dep_plot.RData")
+save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
+save(T1_dup, file = "T1_dup.RData")
+
