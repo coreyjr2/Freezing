@@ -811,7 +811,7 @@ ggplot(afq_cor_table, aes(x=afq_phys_total)) + geom_histogram(color="black", fil
 ggplot(afq_cor_table, aes(x=afq_soc_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.5, fill="darkgoldenrod2")
 
 ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_density(alpha=0.25)
-ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_histogram(alpha=0.55)
+ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_histogram(alpha=0.7, bins=60)
 ggplot(afq_cor_table_wide,aes(x=variable, y=value, fill=variable)) + geom_boxplot()
 
 ###############################################################################
