@@ -959,6 +959,7 @@ pairs.panels(afq[,c(29,70:72)],
 
 ## Add AFQ Total, PSWQ Total and MASQ Totals to the AFQ dataset
 
+## Extract Freezing Item Reponses ##
 afq$pswq_total<-freezing_raw_d$pswq_total
 afq$masq_aa_total<-freezing_raw_d$masq_aa_total
 afq$afq_total<-rowSums(afq[,c(70:72)])
@@ -2252,12 +2253,19 @@ save(afq, file = "afq.RData")
 save(afq_endorsement, file = "afq_endorsement.Rdata")
 
 
-
+afq<-
 
 
 #################################################################
 ###### K- Means Clustering for Determining Item quality #########
 #################################################################
+
+afq<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afq_soc_total)
+afq$pswq_total<-freezing_raw_d$pswq_total
+afq$masq_aa_total<-freezing_raw_d$masq_aa_total
+afq$afq_total<-rowSums(afq[,c(70:72)])
+
 
 afq_1<-as.data.frame(cor(afq[, c("afqs_1", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
 afq_2<-as.data.frame(cor(afq[, c("afqs_2", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
@@ -2399,238 +2407,72 @@ afq_67<-afq_67[ -c(2:4), ]
 afq_68<-afq_68[ -c(2:4), ]
 afq_69<-afq_69[ -c(2:4), ]
 
-afq_1<-afq_1 %>%
-  rename(item = afqs_1)
 
-afq_2<-afq_2 %>%
-  rename(item = afqs_2)
-
-afq_3<-afq_3 %>%
-  rename(item = afqs_3)
-
-afq_4<-afq_4 %>%
-  rename(item = afqs_4)
-
-afq_5<-afq_5 %>%
-  rename(item = afqs_5)
-
-afq_6<-afq_6 %>%
-  rename(item = afqs_6)
-
-afq_7<-afq_7 %>%
-  rename(item = afqs_7)
-
-afq_8<-afq_8 %>%
-  rename(item = afqs_8)
-
-afq_9<-afq_9 %>%
-  rename(item = afqs_9)
-
-afq_10<-afq_10 %>%
-  rename(item = afqs_10)
-
-afq_11<-afq_11 %>%
-  rename(item = afqs_11)
-
-afq_12<-afq_12 %>%
-  rename(item = afqs_12)
-
-afq_13<-afq_13 %>%
-  rename(item = afqs_13)
-
-afq_14<-afq_14 %>%
-  rename(item = afqs_14)
-
-afq_15<-afq_15 %>%
-  rename(item = afqs_15)
-
-afq_16<-afq_16 %>%
-  rename(item = afqs_16)
-
-afq_17<-afq_17 %>%
-  rename(item = afqs_17)
-
-afq_18<-afq_18 %>%
-  rename(item = afqs_18)
-
-afq_19<-afq_19 %>%
-  rename(item = afqs_19)
-
-afq_20<-afq_20 %>%
-  rename(item = afqs_20)
-
-afq_21<-afq_21 %>%
-  rename(item = afqs_21)
-
-afq_22<-afq_22 %>%
-  rename(item = afqs_22)
-
-afq_23<-afq_23 %>%
-  rename(item = afqs_23)
-
-afq_24<-afq_24 %>%
-  rename(item = afqs_24)
-
-afq_25<-afq_25 %>%
-  rename(item = afqs_25)
-
-afq_26<-afq_26 %>%
-  rename(item = afqs_26)
-
-afq_27<-afq_27 %>%
-  rename(item = afqs_27)
-
-afq_28<-afq_28 %>%
-  rename(item = afqs_28)
-
-afq_29<-afq_29 %>%
-  rename(item = afqs_30)
-
-afq_30<-afq_30 %>%
-  rename(item = afqs_31)
-
-afq_31<-afq_31 %>%
-  rename(item = afqs_32)
-
-afq_32<-afq_32 %>%
-  rename(item = afqs_33)
-
-afq_33<-afq_33 %>%
-  rename(item = afqs_34)
-
-afq_34<-afq_34 %>%
-  rename(item = afqs_35)
-
-afq_35<-afq_35 %>%
-  rename(item = afqs_36)
-
-afq_36<-afq_36 %>%
-  rename(item = afqs_37)
-
-afq_37<-afq_37 %>%
-  rename(item = afqs_38)
-
-afq_38<-afq_38 %>%
-  rename(item = afqs_39)
-
-afq_39<-afq_39 %>%
-  rename(item = afqs_40)
-
-afq_40<-afq_40 %>%
-  rename(item = afqs_41)
-
-afq_41<-afq_41 %>%
-  rename(item = afqs_42)
-
-afq_42<-afq_42 %>%
-  rename(item = afqs_43)
-
-afq_43<-afq_43 %>%
-  rename(item = afqs_44)
-
-afq_44<-afq_44 %>%
-  rename(item = afqs_45)
-
-afq_45<-afq_45 %>%
-  rename(item = afqs_46)
-
-afq_46<-afq_46 %>%
-  rename(item = afqs_47)
-
-afq_47<-afq_47 %>%
-  rename(item = afqs_48)
-
-afq_48<-afq_48 %>%
-  rename(item = afqs_49)
-
-afq_49<-afq_49 %>%
-  rename(item = afqs_50)
-
-afq_50<-afq_50 %>%
-  rename(item = afqs_51)
-
-afq_51<-afq_51 %>%
-  rename(item = afqs_52)
-
-afq_52<-afq_52 %>%
-  rename(item = afqs_53)
-
-afq_53<-afq_53 %>%
-  rename(item = afqs_54)
-
-afq_54<-afq_54 %>%
-  rename(item = afqs_55)
-
-afq_55<-afq_55 %>%
-  rename(item = afqs_56)
-
-afq_56<-afq_56 %>%
-  rename(item = afqs_57)
-
-afq_57<-afq_57 %>%
-  rename(item = afqs_58)
-
-afq_58<-afq_58 %>%
-  rename(item = afqs_59)
-
-afq_59<-afq_59 %>%
-  rename(item = afqs_60)
-
-afq_60<-afq_60 %>%
-  rename(item = afqs_61)
-
-afq_61<-afq_61 %>%
-  rename(item = afqs_62)
-
-afq_62<-afq_62 %>%
-  rename(item = afqs_63)
-
-afq_63<-afq_63 %>%
-  rename(item = afqs_64)
-
-afq_64<-afq_64 %>%
-  rename(item = afqs_65)
-
-afq_65<-afq_65 %>%
-  rename(item = afqs_66)
-
-afq_66<-afq_66 %>%
-  rename(item = afqs_67)
-
-afq_67<-afq_67 %>%
-  rename(item = afqs_68)
-
-afq_68<-afq_68 %>%
-  rename(item = afqs_69)
-
-afq_69<-afq_69 %>%
-  rename(item = afqs_70)
 afq_cor_table_kmc<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8,afq_9,afq_10,afq_11,afq_12,afq_13,afq_14,afq_15,afq_16,afq_17,afq_18,afq_19,
                                  afq_20,afq_21,afq_22,afq_23,afq_24,afq_25,afq_26,afq_27,afq_28,afq_29,afq_30,afq_31,afq_32,afq_33,afq_34,afq_35,afq_36,afq_37,
                                  afq_38,afq_39,afq_40,afq_41,afq_42,afq_43,afq_44,afq_45,afq_46,afq_47,afq_48,afq_49,afq_50,afq_51,afq_52,afq_53,afq_54,afq_55,
                                  afq_56,afq_57,afq_58,afq_59,afq_60,afq_61,afq_62,afq_63,afq_64,afq_65,afq_66,afq_67,afq_68,afq_69)
 
-afq_cor_table_kmc<-afq_cor_table_kmc[,-1]
+afq_cor_table_kmc<-afq_cor_table_kmc[,2:4]
 
-write.csv(afq_cor_table_kmc)
+item<-c("afq_1","afq_2","afq_3","afq_4","afq_5","afq_6","afq_7","afq_8","afq_9","afq_10","afq_11","afq_12","afq_13","afq_14","afq_15","afq_16","afq_17","afq_18","afq_19","afq_20","afq_21","afq_22","afq_23","afq_24","afq_25","afq_26","afq_27","afq_28","afq_30","afq_31","afq_32","afq_33","afq_34","afq_35","afq_36","afq_37","afq_38","afq_39","afq_40","afq_41","afq_42","afq_43","afq_44","afq_45","afq_46","afq_47","afq_48","afq_49","afq_50","afq_51","afq_52","afq_53","afq_54","afq_55","afq_56","afq_57","afq_58","afq_59","afq_60","afq_61","afq_62","afq_63","afq_64","afq_65","afq_66","afq_67","afq_68","afq_69", "afq_70")
+
+subscale<-c("cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "social", "social", "social", "social", "social", 
+            "social", "social", "social", "social", "social", 
+            "social", "social", "social")
+
+afq_kmc<-data.frame(item, afq_cor_table_kmc, subscale)
+colnames(afq_kmc)<-(c("item", "afq_total", "masq_aa_total", "pswq_total", "subscale"))
+
+#############################
+##### Chopping block ########
+#############################
+
+#                       /\_[]_/\
+#                      |] _||_ [|
+#               ___     \/ || \/
+#              /___\       ||
+#             (|0 0|)      ||
+#           __/{\U/}\_ ___/vvv
+#          / \  {~}   / _|_P|
+#         | /\  ~   /_/   []
+#         |_| (____)        
+#         \_]/______\        
+#            _\_||_/_           
+#           (_,_||_,_)
+
+#### Items 25, 26, and 27 are very bad boys and are off the team 
+
+afq_kmc <- afq_kmc[-c(25:27), ]
 
 ############### ################
 #### Time to cluster, baby ####
+############### ################
+
+
 install.packages("plot3D")
 library("plot3D")
 install.packages("scatterplot3d") # Install
 library("scatterplot3d") # load
+x <- afq_kmc$afq_total
+y <- afq_kmc$masq_aa_total
+z <- afq_kmc$pswq_total
 
-
-afq_kmc<-read.csv(file.choose())
-
-colnames(afq_kmc)<-(c("item", "afq_total", "masq_aa_total", "pswq_total", "subscale"))
-
-x <- afq_kmc$`MASQ Total`
-y <- afq_kmc$`PSWQ Total`
-z <- afq_kmc$`AFQ Total`
-
-plot3d(pc$scores[,1:3], col=iris$Species)
+plot3d(afq_kmc[,1:3], col=as.numeric(afq_kmc$subscale))
 
 scatter3D(x, y, z, bty = "g",
           pch = 20, cex = 2, xlab = "MASQ", ylab = "PSWQ", zlab = "AFQ", main = "3D Scatterplot of Item to Scale Correlations", col.var = afq_kmc$Subscale, col = c("#1B9E77", "#D95F02", "#7570B3"), theta = 15, phi = 20)
@@ -2642,6 +2484,66 @@ legend("top", legend = levels(afq_kmc$subscale),
 
 #### Let's start clustering #####
 
+###############################
+#### What method is best? ####
+##############################
+intern <- clValid(afq_kmc[,2:4], nClust = 2:7, 
+                  clMethods = c("hierarchical","kmeans","pam"), validation = "internal")
+# Summary
+summary(intern) %>% kable() %>% kable_styling()
+
+kmeans(afq_kmc[,2:4], centers = 2, nstart = 30)
+#################################################
+###    Let's visualize 2-7 cluster solutions  ###
+#################################################
+
+library("stats")
+install.packages("factoextra")
+library("factoextra")
+library("ggplot2")
+library("cowplot")
+
+kmean_calc <- function(df, ...){
+  kmeans(df, scaled = ..., nstart = 30)
+}
+km2 <- kmean_calc(afq_kmc[,2:4], 2)
+km3 <- kmean_calc(afq_kmc[,2:4], 3)
+km4 <- kmeans(afq_kmc[,2:4], 4)
+km5 <- kmeans(afq_kmc[,2:4], 5)
+km6 <- kmeans(afq_kmc[,2:4], 6)
+km7 <- kmeans(afq_kmc[,2:4], 7)
+
+p1 <- fviz_cluster(km2, data = afq_kmc[,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
+p2 <- fviz_cluster(km3, data = afq_kmc[,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
+p3 <- fviz_cluster(km4, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
+p5 <- fviz_cluster(km6, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
+p6 <- fviz_cluster(km7, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
+plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7"))
+
+############################################
+##### How many clusters should we use? #####
+############################################
+
+#### NB Clust 30 indicies test ######
+install.packages("NbClust")
+library("NbClust")
+res.nbclust <- NbClust(afq_kmc[,2:4], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+###Looks like 2 clusters are best solution
+
+cluster<-c(1,  1,  2,  2,  2,  1,  2,  1,  1,  1,  1,  1,  2,  2,  2,  1,  1,  1,  2,  2,  1,  1,  2,  2,  1,  2, 1,  2,  2,  2,  2,  2,  2,  1,  2,  1,  2,  1,  2,  1,  1,  1,  1,  2,  1,  2,  2,  1,  1,  2,  2,  2 , 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  1,  1,  1)
+afq_kmc<-data.frame(afq_kmc, cluster)
+afq_kmc$cluster<-as.factor(afq_kmc$cluster)
+
+scatter3d(x = afq_kmc$pswq_total, y = afq_kmc$masq_aa_total, z = afq_kmc$afq_total, groups = afq_kmc$cluster, surface=FALSE, ellipsoid = TRUE)
+
+################################################
+#### Cluster for all items in the scale     #### 
+################################################
 
 ### Hierarchical clustering of item correlations ####
 di <- dist(afq_kmc[,2:4], method="euclidean")
@@ -2649,17 +2551,88 @@ tree <- hclust(di, method="ward")
 afq_kmc$hcluster <- as.factor((cutree(tree, k=3)-2) %% 3 +1)
 # that modulo business just makes the coming table look nicer
 plot(tree, xlab="")
-rect.hclust(tree, k=3, border="red")
+rect.hclust(tree, k=2, border="red")
 
+############################
 #### K Means clustering ####
-library("stats")
-install.packages("factoextra")
-library("factoextra")
+############################
+
+## Run the analsysis 
+kmeans(afq_kmc[,2:4], centers = 2, nstart = 30)
+##Split between regular items and social items, lets look at how they operate within subscale
 
 
-kmeans(afq_kmc[,2:4], centers = 3, nstart = 30)
+##############################################
+#### Clustering within cognitive and physical  subscale #### 
+##############################################
 
+###############################
+#### What method is best? ####
+##############################
+intern_cog <- clValid(afq_kmc[1:53,2:4], nClust = 1:7, 
+                  clMethods = c("hierarchical","kmeans","pam"), validation = "internal")
+# Summary
+summary(intern_cog) %>% kable() %>% kable_styling()
 
-kmean_calc <- function(df, ...){
+#################################################
+###    Let's visualize 2-7 cluster solutions  ###
+#################################################
+
+kmean_calc_c <- function(df, ...){
   kmeans(df, scaled = ..., nstart = 30)
 }
+km2_c <- kmean_calc(afq_kmc[1:25,2:4], 2)
+km3_c <- kmean_calc(afq_kmc[1:25,2:4], 3)
+km4_c <- kmeans(afq_kmc[1:25,2:4], 4)
+km5_c <- kmeans(afq_kmc[1:25,2:4], 5)
+km6_c <- kmeans(afq_kmc[1:25,2:4], 6)
+km7_c <- kmeans(afq_kmc[1:25,2:4], 7)
+
+p1 <- fviz_cluster(km2_c, data = afq_kmc[1:25,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
+p2 <- fviz_cluster(km3_c, data = afq_kmc[1:25,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
+p3 <- fviz_cluster(km4_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
+p4 <- fviz_cluster(km5_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
+p5 <- fviz_cluster(km6_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
+p6 <- fviz_cluster(km7_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
+plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7"))
+
+###################################################################
+##### How many clusters should we use for cognitive subscale? #####
+###################################################################
+
+#### NB Clust 30 indicies test ######
+res.nbclust <- NbClust(afq_kmc[1:53,2:4], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+
+##########################################
+#### Cluster for cognitive subscale   #### 
+##########################################
+
+############################
+#### K Means clustering ####
+############################
+
+## Run the analsysis 
+kmeans(afq_kmc[1:53,2:4], centers = 4, nstart = 30)
+##Split between regular items and social items, lets look at how they operate within subscale
+afq_kmc_cog_phys<-afq_kmc[1:53,]
+cog_phys_cluster<-c(1,  1,  4,  3,  3,  2,  4,  2,  2,  2,  2,  1,  3,  4,  3,  1,  1,  2,  4,  4,  2,  2,  3,  4,  1,  4)
+afq_kmc_cog_phys<-data.frame(afq_kmc_cog_phys, cog_phys_cluster)
+afq_kmc_cog_phys$cog_phys_cluster<-as.factor(afq_kmc_cog_phys$cog_phys_cluster)
+
+library("rgl")
+library("car")
+scatter3d(x = afq_kmc_cog_phys$pswq_total, y = afq_kmc_cog_phys$masq_aa_total, z = afq_kmc_cog_phys$afq_total, groups = afq_kmc_cog_phys$cog_phys_cluster, surface=FALSE, ellipsoid = TRUE)
+
+
+library("plot3D")
+
+par(mfrow=c(1,1))
+scatter3D(afq_kmc_cog$pswq_total, afq_kmc_cog$masq_aa_total, afq_kmc_cog$afq_total, phi = 0, bty = "g", pch = 20, cex = 0.5)
+# Add text
+text3D(afq_kmc_cog$pswq_total, afq_kmc_cog$masq_aa_total, afq_kmc_cog$afq_total,  labels =afq_kmc_cog$item,
+       add = TRUE, cex = 0.5)
+
