@@ -379,6 +379,129 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total.x, color=age_trend)) +
   geom_smooth(method=lm)
 
 ###########
+#  BRIEF  #
+###########
+
+## First, create subtotals for various sections of the brief (working memory, inhibit, shift, emotional control)
+freezing_raw_d_age$brief_wm_total<- rowSums(freezing_raw_d_age[, c(326,333,339,348,357,368,378,390)])
+freezing_raw_d_age$brief_inh_total<- rowSums(freezing_raw_d_age[,c(327,338,351,358,365,377,380,395)])
+freezing_raw_d_age$brief_shft_total<- rowSums(freezing_raw_d_age[,c(330,344,354,366,383,389)])
+freezing_raw_d_age$brief_emctrl_total<- rowSums(freezing_raw_d_age[,c(323,334,341,350,355,364,373,379,391,394)])
+
+
+## Working Memory
+
+## Plot Working Memory scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Plot Working Memory scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Plot Working Memory scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Inhibit
+
+## Plot Inhibit scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=duplicated)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Inhibit scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=age_new)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Inhibit scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=age_trend)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Shift
+
+## Plot Shift scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=duplicated)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_new)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+
+## Emotional Control
+
+## Plot Shift scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_emctrl_total, color=duplicated)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_emctrl_total, color=age_new)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+
+###########
 #   ATQ   #
 ###########
 
@@ -511,22 +634,14 @@ t.test(rrq_total.x ~ age_trend, data = post_sb)
 ## No Significance
 
 
-############################################################
-## Compare Repeated Participants to Distinct Participants ##
-############################################################
 
-## These tests are used to check for significant group differences at the time of T1 for repeat particiapnts
 
-t.test(pre_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(pre_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
-t.test(pre_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
 
 ##############################
-## compare within subjects  ##
+## Compare Within Subjects  ##
 ##############################
+
+
 t.test(T1_dup$asi_total, T2_dup$asi_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 ## Not Significant
 
@@ -551,6 +666,38 @@ t.test(T1_dup$masq_dm_total, T2_dup$masq_dm_total, alternative = "less", paired=
 
 t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
 #Not Significant
+
+
+## To supplement these findings, let's examine executive functions scores
+
+
+## Score the various subsection of the brief (relevant here: working memory, inhibit, shift, emotional control)
+
+T1_dup$brief_wm_total<- rowSums(T1_dup[, c(324,331,337,346,355,366,376,388)])
+T1_dup$brief_inh_total<- rowSums(T1_dup[,c(325,336,349,356,363,375,378,393)])
+T1_dup$brief_shft_total<- rowSums(T1_dup[,c(328,342,352,364,381,387)])
+T1_dup$brief_emctrl_total<- rowSums(T1_dup[,c(321,332,339,348,353,362,371,377,389,392)])
+
+## Now, T2
+T2_dup$brief_wm_total<- rowSums(T2_dup[, c(324,331,337,346,355,366,376,388)])
+T2_dup$brief_inh_total<- rowSums(T2_dup[,c(325,336,349,356,363,375,378,393)])
+T2_dup$brief_shft_total<- rowSums(T2_dup[,c(328,342,352,364,381,387)])
+T2_dup$brief_emctrl_total<- rowSums(T2_dup[,c(321,332,339,348,353,362,371,377,389,392)])
+
+## Let's test
+t.test(T1_dup$brief_wm_total, T2_dup$brief_wm_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+t.test(T1_dup$brief_inh_total, T2_dup$brief_inh_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+t.test(T1_dup$brief_shft_total, T2_dup$brief_shft_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+t.test(T1_dup$brief_emctrl_total, T2_dup$brief_emctrl_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+
 
 
 
