@@ -35,12 +35,13 @@ install.packages("lubridate")
 library(lubridate)
 install.packages("psy")
 library(psy)
+library(plyr)
+library(dplyr)
 
-
-##Import data##
+##Import data **be sure to order by name before importing so the order of participants matches the Age file
 freezing_raw<-read.csv(file.choose())
 
-## Import Age of Participants
+## Import Age of Participants **be sure to order by name before importing so the order of participants matches the full data file
 
 Age_1053<-read.csv(file.choose())
 
@@ -58,6 +59,10 @@ freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_for
                                             afqs_timestamp,afqs_complete,panas_timestamp,panas_complete,
                                             atq_timestamp,atq_complete,brief_timestamp,brief_complete,
                                             debriefing_form_timestamp,debriefing_form_complete))
+
+## specifying column index 390 = exclusion of any incomplete data ##
+freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
+#Column 390 is the last item of data collection, if the participant did not make it that far in the survey, they did not complete all measures, and they are excluded with this line of code 
 
 ## clear white space in first and last name columns 
 freezing_raw$con_fn<-trimws(freezing_raw$con_fn)
@@ -83,209 +88,13 @@ str(freezing_raw$name)
 
 
 
-## specifying column index 390 = exclusion of any incomplete data ##
-freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
-#Column 390 is the last item of data collection, if the participant did not make it that far in the survey, they did not complete all measures, and they are excluded with this line of code 
+
+################################################################################
+### Let's separate and generate data sets for repeat & distinct participants ###
+################################################################################
 
 
-### Generate data set for only distinct entries
-freezing_raw_d<-freezing_raw %>%
-  dplyr::distinct(name, .keep_all = TRUE)
-
-
-## Add Age column to Distinct Entry Data Set
-
-freezing_raw_d$age<-Age_1053$age
-
-## Reorder columns
-
-freezing_raw_d<- freezing_raw_d[,c(1,2,395,3:394)]
-
-
-## Depression scores by calendar date
-
-# convert format of con date
-freezing_raw_d$con_date<-mdy(freezing_raw_d$con_date)
-typeof(freezing_raw_d$con_date)
-
-# Remove outliers
-freezing_raw_d_age <- freezing_raw_d %>%
-  dplyr::filter (con_date >= "2020-01-31") %>%
-  dplyr::filter (con_date <= "2020-05-31")
-
-typeof(freezing_raw_d_age$age)
-
-## Add variable specifying pre and post spring break Separate groups by consent date
-
-freezing_raw_d_age<-freezing_raw_d_age %>%
-  mutate(timepoint=case_when(
-    record_id %in% 1:539 ~ "pre-spring break",
-    record_id %in% 540:758 ~ "post-spring break",
-  ))
-## Reorder columns
-freezing_raw_d_age<- freezing_raw_d_age[,c(1:4,396, 5:395)]
-
-## Add variable to recode age
-
-freezing_raw_d_age<-freezing_raw_d_age %>%
-  mutate(age_new=case_when(
-    age %in% 18 ~ "18",
-    age %in% 19 ~ "19",
-    age %in% 20 ~ "20",
-    age %in% 21 ~ "21",
-    age %in% 22 ~ "22",
-    age %in% 23:27 ~ "23+"
-  ))
-
-
-## Add duplicated column
-T1_dup_yes<-T1_dup
-T1_dup_yes<-T1_dup_yes %>%
-  dplyr::mutate(duplicated = "yes")
-
-freezing_raw_d_age<-dplyr::full_join(freezing_raw_d_age, T1_dup_yes, by = "record_id")
-freezing_raw_d_age<-freezing_raw_d_age[,c(1:396,791)]
-freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
-
-## Replace NA with "no"
-freezing_raw_d_age$duplicated<-replace_na(freezing_raw_d_age$duplicated, replace = "no")
-
-## Plot Depression Scores
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color = duplicated)) +
-  geom_point(shape=10) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-dep_plot <- freezing_raw_d_age %>%
-  dplyr::filter(timepoint == "post-spring break" & duplicated == "yes"| timepoint == "pre-spring break")
- 
-
-## Plot Depression Scores
-ggplot(dep_plot, aes(x=con_date.x, y=masq_ad_total.x, color = duplicated)) +
-  geom_point(shape=10) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-
-
-ggplot(T1_dup, aes(x=con_date, y=masq_ad_total)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-## Create Linear Model
-fit<-lm(freezing_raw_d_age$con_date~freezing_raw_d_age$masq_ad_total)
-plot(fit)
-anova(fit)
-coefficients(fit)
-
-## Plot
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-
-freezing_raw_d_age$con_date<-as.Date(freezing_raw_d_age$con_date)
-freezing_raw_d_age$age<-as.factor(freezing_raw_d_age$age)
-
-
-pairs.panels(freezing_raw_d_age[,c(4,127)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-library(psych)
-
-## Plot Age vs Various Scores
-
-plot(freezing_raw_d$pswq_total, freezing_raw_d$age, main="Age & Worry",
-     xlab="PSWQ Total", ylab="Age", pch=19)
-
-plot(freezing_raw_d$masq_aa_total, freezing_raw_d$age, main="Age & Anxious Arousal",
-     xlab="Anxious Arousal Total", ylab="Age", pch=19)
-
-plot(freezing_raw_d$masq_ad_total, freezing_raw_d$age, main="Age & Anhedonic Depression",
-     xlab="Anhedonic Depression Total", ylab="Age", pch=19)
-
-
-## Group participants by age in separate data frames
-
-age_18<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age==18)
-age_19<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age==19)
-age_20<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age==20)
-age_21<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age==21)
-age_22<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age==22)
-age_23plus<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$age>=23)
-
-
-## Check for differences by age
-
-psych::describe(age_18$pswq_total)
-psych::describe(age_19$pswq_total)
-psych::describe(age_20$pswq_total)
-psych::describe(age_21$pswq_total)
-psych::describe(age_22$pswq_total)
-
-
-
-
-## Visualize Age & Worry
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm, se = FALSE) +
-  labs(x= "date of completion", y= "pswq total") +
-  labs(color= "Age")
-
-
-## Seems like there is an increase in worry by time for ages 21-23+, but a decrease for those <20, let's look into this
-
-freezing_raw_d_age<-freezing_raw_d_age %>%
-  mutate(age_trend=case_when(
-    age %in% 18 ~ "<=20",
-    age %in% 19 ~ "<=20",
-    age %in% 20 ~ "<=20",
-    age %in% 21 ~ ">20",
-    age %in% 22 ~ ">20",
-    age %in% 23:27 ~ ">20"
-  ))
-
-## Let's visualize again
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_trend)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm, se = FALSE) +
-  labs(x= "date of completion", y= "pswq total") +
-  labs(color= "Age")
-
-## Can we run a t.test to compare means?
-
-t.test(pswq_total.x ~ age_trend, data = freezing_raw_d_age)
-
-## Although the mean is higher in the >20 group, we fail to reject the null hypothesis, let's check effect size
-
-# First make data set for each trend
-age_plus20<-freezing_raw_d_age %>%
-  dplyr::filter(freezing_raw_d_age$age_trend==">20")
-
-age_less_eq20<-freezing_raw_d_age %>%
-  dplyr::filter(freezing_raw_d_age$age_trend=="<=20")
-
-
-
-
-### ############################################# ###
-### Generate data sets of all repeat participants ###
-### ############################################# ###
-
+## Create Duplicated df
 duplicated<-freezing_raw %>%
   janitor::get_dupes(name)
 
@@ -312,34 +121,396 @@ T2_dup<-duplicated %>%
 ## Remove repeated entries within Time 2 due to questionnaire setup issue
 T2_dup<-T2_dup %>%
   dplyr::filter(!duplicated(name))
+## Duplicated groups and dfs will be used later to analyze within subject findings
 
-## Create HPE and LPE totals for MASQ_ad scores in T1 & T2
-T1_dup$MASQ_HPE_total<- rowSums(T1_dup[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
-T1_dup$MASQ_LPE_total<- rowSums(T1_dup[,c(102,97,94,91,100,107,112,124)])
-T2_dup$MASQ_HPE_total<- rowSums(T2_dup[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
-T2_dup$MASQ_LPE_total<- rowSums(T2_dup[,c(102,97,94,91,100,107,112,124)])
+### Now, let's generate a working data set for only the distinct entries
+freezing_raw_d<-freezing_raw %>%
+  dplyr::distinct(name, .keep_all = TRUE)
 
 
-psych::describe(T1_dup$MASQ_HPE_total)
-psych::describe(T2_dup$MASQ_HPE_total)
-psych::describe(T1_dup$MASQ_LPE_total)
-psych::describe(T2_dup$MASQ_LPE_total)
+## Add Age column to Distinct Entry Data Set
 
-## Check approach avoidance for repeated participants
+freezing_raw_d$age<-Age_1053$age
 
-T1_dup$atq_appr<-rowSums(T1_dup[, c(309,311,312,315,317,318)])
-T1_dup$atq_avoi<-rowSums(T1_dup[, c(308,310,313,314,316,319)])
+## Reorder columns
 
-pre_sb$atq_appr<-rowSums(pre_sb[, c(309,311,312,315,317,318)])
-pre_sb$atq_avoi<-rowSums(pre_sb[, c(308,310,313,314,316,319)])
+freezing_raw_d<- freezing_raw_d[,c(1,2,395,3:394)]
+
+# convert format of con date
+freezing_raw_d$con_date<-mdy(freezing_raw_d$con_date)
+typeof(freezing_raw_d$con_date)
+
+# Remove outliers
+freezing_raw_d_age <- freezing_raw_d %>%
+  dplyr::filter (con_date >= "2020-01-31") %>%
+  dplyr::filter (con_date <= "2020-05-31")
+
+
+
+#########################################
+### Add columns for grouping analysis ###
+#########################################
+
+## Timepoint
+## Add variable specifying pre and post spring break Separate groups by consent date
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(timepoint=case_when(
+    record_id %in% 1:539 ~ "pre-spring break",
+    record_id %in% 540:758 ~ "post-spring break",
+  ))
+
+## Reorder columns
+freezing_raw_d_age<- freezing_raw_d_age[,c(1:4,396, 5:395)]
+
+
+## Duplicated
+## Add variable specifying whether or not they repeated our questionnaire
+
+T1_dup_yes<-T1_dup
+T1_dup_yes<-T1_dup_yes %>%
+  dplyr::mutate(duplicated = "yes")
+
+freezing_raw_d_age<-dplyr::full_join(freezing_raw_d_age, T1_dup_yes, by = "record_id")
+
+## Replace NA with "no"
+freezing_raw_d_age$duplicated<-replace_na(freezing_raw_d_age$duplicated, replace = "no")
+
+## Reorder Columns
+freezing_raw_d_age<-freezing_raw_d_age[,c(1:396,791)]
+freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
+
+## age_new
+## Add variable to recode age
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(age_new=case_when(
+    age %in% 18 ~ "18",
+    age %in% 19 ~ "19",
+    age %in% 20 ~ "20",
+    age %in% 21 ~ "21",
+    age %in% 22 ~ "22",
+    age %in% 23:27 ~ "23+"
+  ))
+
+## age_trend
+## Add variable to recode for age trends, separately
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(age_trend=case_when(
+    age %in% 18 ~ "<=20",
+    age %in% 19 ~ "<=20",
+    age %in% 20 ~ "<=20",
+    age %in% 21 ~ ">20",
+    age %in% 22 ~ ">20",
+    age %in% 23:27 ~ ">20"
+  ))
+
+
+## Group participants by age in separate data frames for ease when extracting descriptive stats of particular scores by age
+
+age_18<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==18)
+age_19<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==19)
+age_20<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==20)
+age_21<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==21)
+age_22<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age==22)
+age_23plus<-freezing_raw_d %>%
+  dplyr::filter(freezing_raw_d$age>=23)
+
+
+
+
+#########################################
+###  Visualize Depression & Anxiety   ###
+#########################################
+
+###########
+# MASQ AD #
+###########
+
+## Plot Depression Scores by Duplicated vs Distinct
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color = duplicated)) +
+  geom_point(shape=10) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Plot Depression scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Depression scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Create Linear Model
+fit<-lm(freezing_raw_d_age$con_date~freezing_raw_d_age$masq_ad_total)
+plot(fit)
+anova(fit)
+coefficients(fit)
+
+## Let's also check for patterns in Anhedonic Depression subsections, Low Positive Affect & Depressive Mood
+
+
+## Create Subsections for all relevant data sets
+freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c(89,91,92,95,98,99,101,102,104,108,113,118,121,124)])
+freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c(94,97,100,103,105,110,115,127)])
+
+
+##Low Positive Affect
+
+## Plot Low Positive Affect Scores by Duplicated vs Distinct
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color = duplicated)) +
+  geom_point(shape=10) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Low Positive Affect scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Low Positive Affect scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Depressive Mood
+
+## Plot Depressive Mood Scores by Duplicated vs Distinct
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color = duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Depressive Mood scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Depressive Mood scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+###########
+# MASQ AA #
+###########
+
+## Plot Arousal by Duplicated vs Distinct
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_aa_total.x, color = duplicated)) +
+  geom_point(shape=10) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Plot Arousal scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_aa_total.x, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Arousal by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_aa_total.x, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+###########
+#  PSWQ   #
+###########
+
+## Plot Worry Scores by Duplicated vs Distinct
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color = duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Worry scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "Age")
+
+## Plot Worry scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+###########
+#   ASI   #
+###########
+
+## Plot Anxiety Sensitivity Scores by Duplicated vs Distinct
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total, color = duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Anxiety Sensitivity scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total.x, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "Age")
+
+## Plot Anxiety Sensitivity scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total.x, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+###########
+#  BRIEF  #
+###########
+
+## First, create subtotals for various sections of the brief (working memory, inhibit, shift, emotional control)
+freezing_raw_d_age$brief_wm_total<- rowSums(freezing_raw_d_age[, c(326,333,339,348,357,368,378,390)])
+freezing_raw_d_age$brief_inh_total<- rowSums(freezing_raw_d_age[,c(327,338,351,358,365,377,380,395)])
+freezing_raw_d_age$brief_shft_total<- rowSums(freezing_raw_d_age[,c(330,344,354,366,383,389)])
+freezing_raw_d_age$brief_emctrl_total<- rowSums(freezing_raw_d_age[,c(323,334,341,350,355,364,373,379,391,394)])
+
+
+## Working Memory
+
+## Plot Working Memory scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Plot Working Memory scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Plot Working Memory scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+
+## Inhibit
+
+## Plot Inhibit scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=duplicated)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Inhibit scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=age_new)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Inhibit scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=age_trend)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Shift
+
+## Plot Shift scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=duplicated)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_new)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+
+## Emotional Control
+
+## Plot Shift scores by Duplicated
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=duplicated)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_emctrl_total, color=duplicated)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=age_new)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_emctrl_total, color=age_new)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+## Plot Shift scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+
+###########
+#   ATQ   #
+###########
 
 freezing_raw_d_age$atq_appr<-rowSums(freezing_raw_d_age[, c(311,313,314,317,319,320)])
 freezing_raw_d_age$atq_avoi<-rowSums(freezing_raw_d_age[, c(310,312,315,316,318,321)])
   
-  
+ 
 ## Calculate Means for each group
-library(plyr)
-library(dplyr)
+
 atq_avoi_mu <- ddply(freezing_raw_d_age, "duplicated", summarise, grp.mean=mean(atq_avoi)) 
 atq_appr_mu <- ddply(freezing_raw_d_age, "duplicated", summarise, grp.mean=mean(atq_appr)) 
 
@@ -347,136 +518,189 @@ atq_appr_mu <- ddply(freezing_raw_d_age, "duplicated", summarise, grp.mean=mean(
 
 ggplot(freezing_raw_d_age, aes(x=atq_avoi, color=duplicated)) + 
   geom_histogram(binwidth=1, fill="white") +
-  geom_vline(data=atq_avoi_mu, aes(xintercept=grp.mean, color=duplicated),
-             linetype="dashed") +
+  geom_vline(data=atq_avoi_mu, aes(xintercept=grp.mean, color=duplicated), linetype="dashed")
   labs(x= "Avoidance Total")
 
+##Visualize repeat vs distinct participant approach 
 ggplot(freezing_raw_d_age, aes(x=atq_appr, color=duplicated)) + 
   geom_histogram(binwidth=1, fill="white")+
   geom_vline(data=atq_appr_mu, aes(xintercept=grp.mean, color=duplicated), linetype="dashed") +
   labs(x= "Avoidance Total")
 
-install.packages("effectsize")
-library(effectsize)
-cohen.D(T1_dup$atq_total, pre_sb$atq_total, method = "pooled", mu = 0, formula = NULL )
 
-## Test for Normality & check descriptive stats
-ggqqplot(T1_dup$asi_total)
-summary(T1_dup$asi_total)
-ggqqplot(T1_dup$masq_aa_total)
-summary(T1_dup$masq_aa_total)
-ggqqplot(T1_dup$masq_ad_total)
-summary(T1_dup$masq_ad_total)
-ggqqplot(T1_dup$pswq_total)
-summary(T1_dup$pswq_total)
+#############################################
+##  Analyze Depression & Anxiety Scores    ##
+#############################################
 
-ggqqplot(T2_dup$asi_total)
-summary(T2_dup$asi_total)
-ggqqplot(T2_dup$masq_aa_total)
-summary(T2_dup$masq_aa_total)
-ggqqplot(T2_dup$masq_ad_total)
-summary(T2_dup$masq_ad_total)
-ggqqplot(T2_dup$pswq_total)
-summary(T2_dup$pswq_total)
-
-## Test for Variance
-var.test(T1_dup$asi_total, T2_dup$asi_total, ratio = 1, alternative = "two.sided")
-var.test(T1_dup$masq_aa_total, T2_dup$masq_aa_total, ratio = 1, alternative = "two.sided")
-var.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, ratio = 1, alternative = "two.sided")
-var.test(T1_dup$pswq_total, T2_dup$pswq_total, ratio = 1, alternative = "two.sided")
-
-## Anxiety T Tests, unequal variances, T1 & T2 ##
-
-t.test(T1_dup$asi_total, T2_dup$asi_total, alternative = "less", paired=TRUE, var.equal = FALSE)
-t.test(T1_dup$masq_aa_total, T2_dup$masq_aa_total, alternative = "less", paired=TRUE, var.equal = FALSE)
-t.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, alternative = "less", paired=TRUE, var.equal = FALSE)
-t.test(T1_dup$MASQ_HPE_total, T2_dup$MASQ_HPE_total, alternative = "less", paired=TRUE, var.equal = FALSE)
-t.test(T1_dup$MASQ_LPE_total, T2_dup$MASQ_LPE_total, alternative = "less", paired=TRUE, var.equal = FALSE)
-t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
-
-
-###############################################################################
-##     Anxiety/Depression Pre-Spring Break vs Post-Spring Break Testing      ##
-############################################################################### 
-
-## Create MASQ High Positive Emotion (HPE) and Low Positive Emotion (LPE) columns
-
-freezing_raw_d$MASQ_HPE_total<- rowSums(freezing_raw_d[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
-freezing_raw_d$MASQ_LPE_total<- rowSums( freezing_raw_d[,c(102,97,94,91,100,107,112,124)])
+## Since the plots show various trends over time, let's split up the data by date of completion in relation to time (pre vs post spring break)
 
 
 ## Create pre-spring break & post-spring break groups
-pre_sb<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$record_id < 540)
+pre_sb<-freezing_raw_d_age %>%
+  dplyr::filter(freezing_raw_d_age$record_id < 540)
 
-post_sb<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$record_id >= 540)
-
-
-## Create Low Positive Affect and Depressive Mood for pre and post spring break groups
-
-pre_sb$MASQ_HPE_total<- rowSums(pre_sb[, c(86,88,89,92,95,96,98,99,101,105,110,115,118,121)])
-post_sb$MASQ_LPE_total<- rowSums(post_sb[,c(102,97,94,91,100,107,112,124)])
-
-psych::describe(pre_sb$MASQ_HPE_total)
-psych::describe(post_sb$MASQ_HPE_total)
-psych::describe(pre_sb$MASQ_LPE_total)
-psych::describe(post_sb$MASQ_LPE_total)
+post_sb<-freezing_raw_d_age %>%
+  dplyr::filter(freezing_raw_d_age$record_id >= 540)
 
 
-## Although our sample size is large enough, test for normality ##
-ggqqplot(pre_sb$asi_total)
-ggqqplot(pre_sb$masq_aa_total)
-ggqqplot(pre_sb$masq_ad_total)
-ggqqplot(pre_sb$pswq_total)
+## Now, let's look at these scores. 
 
 
-ggqqplot(post_sb$asi_total)
-ggqqplot(post_sb$masq_aa_total)
-ggqqplot(post_sb$masq_ad_total)
-ggqqplot(post_sb$pswq_total)
+###########
+#  PSWQ   #
+###########
 
-## Check for variance ##
+## First test comparison of all participants separated by pre vs post spring break
 
-var.test(pre_sb$asi_total, post_sb$asi_total, alternative =  "two.sided")
-hist(pre_sb$asi_total)
-hist(post_sb$asi_total)
-
-var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative =  "two.sided")
-hist(pre_sb$masq_aa_total)
-hist(post_sb$masq_aa_total)
-
-var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative =  "two.sided")
-par(mfrow=c(1,2))
-hist(pre_sb$masq_ad_total)
-hist(post_sb$masq_ad_total)
-
-var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative =  "two.sided")
-
-## T-Test for Anxiety Totals ##
-
-t.test(pre_sb$pswq_total, post_sb$pswq_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$MASQ_HPE_total, post_sb$MASQ_HPE_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$MASQ_LPE_total, post_sb$MASQ_LPE_total, alternative = "less", var.equal = FALSE)
-t.test(pre_sb$asi_total, post_sb$asi_total, alternative = "less", var.equal = FALSE)
+t.test(pre_sb$pswq_total.x, post_sb$pswq_total.x, alternative = "two.sided", var.equal = FALSE)
+## No significant difference for general sample
 
 
-############################################################
-## Compare Repeated Participants to Distinct Participants ##
-############################################################
+## T test Worry scores by age trend and calendar date
 
-t.test(pre_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$pswq_total, T1_dup$pswq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(pre_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$masq_aa_total, T1_dup$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
-t.test(pre_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
-t.test(post_sb$atq_total, T1_dup$atq_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pswq_total.x ~ age_trend, data = pre_sb)
+t.test(pswq_total.x ~ age_trend, data = post_sb)
+
+## No significant difference before spring break
+## Significant difference AFTER spring break! Tell this story!!
+
+## T test Worry scores by duplicated and calendar date
+
+t.test(pswq_total.x ~ duplicated, data = pre_sb)
+t.test(pswq_total.x ~ duplicated, data = post_sb)
+
+## No Significance
 
 
-save(afq, file = "afq.RData")
-save(afq_endorsement, file = "afq_endorsement.Rdata")
+############
+#  MASQ AA #
+############
+
+## First test comparison of all participants separated by pre vs post spring break
+
+t.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative = "two.sided", var.equal = FALSE)
+## No significant difference for general sample
+
+## T test Arousal scores by age trend and calendar date
+
+t.test(masq_aa_total.x ~ age_trend, data = pre_sb)
+t.test(masq_aa_total.x ~ age_trend, data = post_sb)
+
+## No significance
+
+## T test Arousal scores by duplicated and calendar date
+
+t.test(masq_aa_total.x ~ duplicated, data = pre_sb)
+t.test(masq_aa_total.x ~ duplicated, data = post_sb)
+
+## No Significance
+
+
+############
+#  MASQ AD #
+############
+
+## First test comparison of all participants separated by pre vs post spring break
+
+t.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$masq_lpa_total, post_sb$masq_lpa_total, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$masq_dm_total, post_sb$masq_dm_total, alternative = "two.sided", var.equal = FALSE)
+## ALL SIGNIFICANT!! Tell this story!
+
+## Test Depression scores by age trend and calendar date
+
+t.test(masq_ad_total.x ~ age_trend, data = pre_sb)
+t.test(masq_ad_total.x ~ age_trend, data = post_sb)
+
+t.test(masq_lpa_total ~ age_trend, data = pre_sb)
+t.test(masq_lpa_total ~ age_trend, data = post_sb)
+
+t.test(masq_dm_total ~ age_trend, data = pre_sb)
+t.test(masq_dm_total ~ age_trend, data = post_sb)
+
+############
+#  RRQ     #
+############
+
+## First test comparison of all participants separated by pre vs post spring break
+
+t.test(pre_sb$rrq_total, post_sb$rrq_total, alternative = "two.sided", var.equal = FALSE)
+## No Significance
+
+## T test RRQ scores by age trend and calendar date
+
+t.test(rrq_total.x ~ age_trend, data = pre_sb)
+t.test(rrq_total.x ~ age_trend, data = post_sb)
+## No Significance
+
+
+
+
+
+##############################
+## Compare Within Subjects  ##
+##############################
+
+
+t.test(T1_dup$asi_total, T2_dup$asi_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+## Not Significant
+
+t.test(T1_dup$masq_aa_total, T2_dup$masq_aa_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+## Not Significant
+
+t.test(T1_dup$masq_ad_total, T2_dup$masq_ad_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+## Significant
+
+## Quick detour to calculate the totals of the MASQ aa subsections in these datasets
+T1_dup$masq_lpa_total<- rowSums(T1_dup[, c(87,89,90,93,96,97,99,100,102,106,111,116,119,122)])
+T1_dup$masq_dm_total<- rowSums(T1_dup[,c(92,95,98,101,103,108,113,125)])
+T2_dup$masq_lpa_total<- rowSums(T2_dup[, c(87,89,90,93,96,97,99,100,102,106,111,116,119,122)])
+T2_dup$masq_dm_total<- rowSums(T2_dup[,c(92,95,98,101,103,108,113,125)])
+
+## Okay...back at it
+t.test(T1_dup$masq_lpa_total, T2_dup$masq_lpa_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+# Trending towards significant 
+
+t.test(T1_dup$masq_dm_total, T2_dup$masq_dm_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+# Trending towards significant 
+
+t.test(T1_dup$pswq_total, T2_dup$pswq_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#Not Significant
+
+
+## To supplement these findings, let's examine executive functions scores
+
+
+## Score the various subsection of the brief (relevant here: working memory, inhibit, shift, emotional control)
+
+T1_dup$brief_wm_total<- rowSums(T1_dup[, c(324,331,337,346,355,366,376,388)])
+T1_dup$brief_inh_total<- rowSums(T1_dup[,c(325,336,349,356,363,375,378,393)])
+T1_dup$brief_shft_total<- rowSums(T1_dup[,c(328,342,352,364,381,387)])
+T1_dup$brief_emctrl_total<- rowSums(T1_dup[,c(321,332,339,348,353,362,371,377,389,392)])
+
+## Now, T2
+T2_dup$brief_wm_total<- rowSums(T2_dup[, c(324,331,337,346,355,366,376,388)])
+T2_dup$brief_inh_total<- rowSums(T2_dup[,c(325,336,349,356,363,375,378,393)])
+T2_dup$brief_shft_total<- rowSums(T2_dup[,c(328,342,352,364,381,387)])
+T2_dup$brief_emctrl_total<- rowSums(T2_dup[,c(321,332,339,348,353,362,371,377,389,392)])
+
+## Let's test
+t.test(T1_dup$brief_wm_total, T2_dup$brief_wm_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+t.test(T1_dup$brief_inh_total, T2_dup$brief_inh_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+t.test(T1_dup$brief_shft_total, T2_dup$brief_shft_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+t.test(T1_dup$brief_emctrl_total, T2_dup$brief_emctrl_total, alternative = "less", paired=TRUE, var.equal = FALSE)
+#not significant
+
+
+
+
+
 
 ###############################################################################
 ##        Rational Scale Development - Item Test Correlations                ##
@@ -504,8 +728,6 @@ afq<-freezing_raw_d %>%
   dplyr::select(afqs_1:afq_soc_total)
 
 
-
-
 ## Examine Cognitive Totals ##
 hist(freezing_raw_d$afq_cog_total)
 summary(freezing_raw_d$afq_cog_total)
@@ -526,7 +748,6 @@ describe(freezing_raw_d$afq_soc_total)
 
 
 ## Visualize Correlations - each item to total factor score ##
-?pairs.panels
 
 pairs.panels(afq[,c(1,70:72)], 
              method = "pearson", # correlation method
@@ -730,6 +951,8 @@ pairs.panels(afq[,c(29,70:72)],
              density = TRUE,  # show density plots
              ellipses = TRUE # show correlation ellipses
 )
+#....The list goes on, one could visualize all items if necessary or desired
+
 ###########################################################################################
 ## Visualize Correlations between AFQ items & MASQ/PSWQ- each item to total factor score ##
 ###########################################################################################
@@ -1670,161 +1893,6 @@ ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_density(alpha=0.25
 ggplot(afq_cor_table_wide,aes(x=value, fill=variable)) + geom_histogram(alpha=0.7, bins=60)
 ggplot(afq_cor_table_wide,aes(x=variable, y=value, fill=variable)) + geom_boxplot()
 
-###############################################################################
-##         Anxiety Pre-Spring Break vs Post-Spring Break Testing             ##
-############################################################################### 
-
-## Create pre-spring break & post-spring break groups
-pre_sb<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$record_id < 540)
-
-post_sb<-freezing_raw_d %>%
-  dplyr::filter(freezing_raw_d$record_id >= 540)
-
-## Although our sample size is large enough, test for normality ##
-ggqqplot(pre_sb$asi_total)
-ggqqplot(pre_sb$masq_aa_total)
-ggqqplot(pre_sb$masq_ad_total)
-ggqqplot(pre_sb$pswq_total)
-
-
-ggqqplot(post_sb$asi_total)
-ggqqplot(post_sb$masq_aa_total)
-ggqqplot(post_sb$masq_ad_total)
-ggqqplot(post_sb$pswq_total)
-
-## Check for variance ##
-
-var.test(pre_sb$asi_total, post_sb$asi_total, alternative =  "two.sided")
-hist(pre_sb$asi_total)
-hist(post_sb$asi_total)
-
-var.test(pre_sb$masq_aa_total, post_sb$masq_aa_total, alternative =  "two.sided")
-hist(pre_sb$masq_aa_total)
-hist(post_sb$masq_aa_total)
-
-var.test(pre_sb$masq_ad_total, post_sb$masq_ad_total, alternative =  "two.sided")
-par(mfrow=c(1,2))
-hist(pre_sb$masq_ad_total)
-hist(post_sb$masq_ad_total)
-
-var.test(pre_sb$pswq_total, post_sb$pswq_total, alternative =  "two.sided")
-=======
-## View Histograms of Correlations
-hist(afq_cor_table$afq_cog_total)
-hist(afq_cor_table$afq_phys_total)
-hist(afq_cor_table$afq_soc_total)
->>>>>>> 636c8bbccc8ddc91115c3d1b5edb3b9724645370
-
-write_tsv(afq_cor_table, "AFQ_Correlations")
-
-
-
-
-###################################################
-##     Traditional EFA for Freezing (AFQ)        ##
-###################################################   
-
-## The following steps will only test the distinct entries, no participant duplicates are included ##
-
-
-## cutting out AFQ endorsement section ##
-freezing_raw_d<-dplyr::select(freezing_raw_d,-c(afq_1:afq_24))
-#Check to see if we only have complete cases in the raw dataset
-complete.cases(freezing_raw_d)     
-
-
-
-
-## Set data to include anxious freezing symptom values ##
-efa_freeze<-freezing_raw_d %>%
-  dplyr::select(afqs_1:afqs_70)
-
-save(efa_freeze, file = "efa_freeze.RData")
-## Determine number of factors to extract ##
-
-## Get eigenvalues ##
-ev<-eigen(cor(efa_freeze))
-
-## conduct parallel analysis ##
-ap<-parallel(subject = nrow(efa_freeze), var=ncol(efa_freeze), rep=100, cent=0.05)
-
-
-## Show analysis of factors to retain ##
-nS<-nScree(x=ev$values, aparallel=ap$eigen$qevpea)
-plotnScree(nS)
-
-## Look for the number of components associated to the last severe slope change (i.e. what is the number of components before the slope flattens) ##
-## Remember to stay flexible. Scree plot indicates anywhere from 3-7 factors in our case ##
-
-
-
-
-## After # of factors has been decided upon, rotate your data ##
-
-## orthogonal rotation - assumes no correlation between components/factors ##
-efa.ort<-fa(efa_freeze, nfactors = 4, rotate = "varimax")
-print(efa.ort)
-
-## Let's make this easier to read and sort by loading above .3 for each factor##
-print(efa.ort, cut=.4)
-
-
-## How about oblique rotation - assumes correlation between components/factors ##
-efa.obl.1<-fa(efa_freeze, nfactors = 1, rotate = "oblimin")
-print(efa.obl.1)
-
-
-efa.obl.2<-fa(efa_freeze, nfactors = 2, rotate = "oblimin")
-print(efa.obl.2, cut=.6, sort=T)
-
-efa.obl.3<-fa(efa_freeze, nfactors = 3, rotate = "oblimin")
-print(efa.obl.3, cut=.1, sort = T)
-
-factor.congruence(efa.obl.2,efa.obl.3)
-
-efa.obl.4<-fa(efa_freeze, nfactors = 4, rotate = "oblimin")
-print(efa.obl.4, cut=.6, sort = T)
-
-factor.congruence(efa.obl.3,efa.obl.4)
-
-efa.obl.5<-fa(efa_freeze, nfactors = 5, rotate = "oblimin")
-print(efa.obl.5, cut=.6, sort=T)
-
-efa.obl.6<-fa(efa_freeze, nfactors = 6, rotate = "oblimin")
-print(efa.obl.6, cut=.6, sort=T)
-
-efa.obl.7<-fa(efa_freeze, nfactors = 7, rotate = "oblimin")
-print(efa.obl.7, cut=.6, sort=T)
-
-efa.obl.8<-fa(efa_freeze, nfactors = 8, rotate = "oblimin")
-print(efa.obl.8, cut=.6, sort=T)
-
-
-
-## Let's make this easier to read and sort by loading above .3 for each factor ##
-print(efa.obl, cut=.5)
-print(efa.obl.5, cut=.5)
-
-# how similar are these solutions? Let's check with a congruence coefficient ##
-factor.congruence(efa.obl.5,efa.obl.7)
-
-
-
-
-
-
-fa.parallel(efa_freeze, fm = 'minres', fa = 'fa', plot = FALSE)
-fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
-
-
-#efa_df<-freezing_raw %>%
-  #dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
-#fa.parallel(efa_df, fm = 'minres', fa = 'fa', plot = FALSE)
-#fa(efa_df,nfactors=11,rotate="oblimin",fm="minres")
-
-
-
 
 ## Check Reliability Measure for Random Item Sets
 
@@ -1989,8 +2057,107 @@ alpha(afq.pure.items)
 
 
 
+###################################################
+##     Traditional EFA for Freezing (AFQ)        ##
+###################################################   
+
+## The following steps will only test the distinct entries, no participant duplicates are included ##
 
 
+## cutting out AFQ endorsement section ##
+freezing_raw_d<-dplyr::select(freezing_raw_d,-c(afq_1:afq_24))
+#Check to see if we only have complete cases in the raw dataset
+complete.cases(freezing_raw_d)     
+
+
+
+
+## Set data to include anxious freezing symptom values ##
+efa_freeze<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afqs_70)
+
+save(efa_freeze, file = "efa_freeze.RData")
+## Determine number of factors to extract ##
+
+## Get eigenvalues ##
+ev<-eigen(cor(efa_freeze))
+
+## conduct parallel analysis ##
+ap<-parallel(subject = nrow(efa_freeze), var=ncol(efa_freeze), rep=100, cent=0.05)
+
+
+## Show analysis of factors to retain ##
+nS<-nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS)
+
+## Look for the number of components associated to the last severe slope change (i.e. what is the number of components before the slope flattens) ##
+## Remember to stay flexible. Scree plot indicates anywhere from 3-7 factors in our case ##
+
+
+
+
+## After # of factors has been decided upon, rotate your data ##
+
+## orthogonal rotation - assumes no correlation between components/factors ##
+efa.ort<-fa(efa_freeze, nfactors = 4, rotate = "varimax")
+print(efa.ort)
+
+## Let's make this easier to read and sort by loading above .3 for each factor##
+print(efa.ort, cut=.4)
+
+
+## How about oblique rotation - assumes correlation between components/factors ##
+efa.obl.1<-fa(efa_freeze, nfactors = 1, rotate = "oblimin")
+print(efa.obl.1)
+
+
+efa.obl.2<-fa(efa_freeze, nfactors = 2, rotate = "oblimin")
+print(efa.obl.2, cut=.6, sort=T)
+
+efa.obl.3<-fa(efa_freeze, nfactors = 3, rotate = "oblimin")
+print(efa.obl.3, cut=.1, sort = T)
+
+factor.congruence(efa.obl.2,efa.obl.3)
+
+efa.obl.4<-fa(efa_freeze, nfactors = 4, rotate = "oblimin")
+print(efa.obl.4, cut=.6, sort = T)
+
+factor.congruence(efa.obl.3,efa.obl.4)
+
+efa.obl.5<-fa(efa_freeze, nfactors = 5, rotate = "oblimin")
+print(efa.obl.5, cut=.6, sort=T)
+
+efa.obl.6<-fa(efa_freeze, nfactors = 6, rotate = "oblimin")
+print(efa.obl.6, cut=.6, sort=T)
+
+efa.obl.7<-fa(efa_freeze, nfactors = 7, rotate = "oblimin")
+print(efa.obl.7, cut=.6, sort=T)
+
+efa.obl.8<-fa(efa_freeze, nfactors = 8, rotate = "oblimin")
+print(efa.obl.8, cut=.6, sort=T)
+
+
+
+## Let's make this easier to read and sort by loading above .3 for each factor ##
+print(efa.obl, cut=.5)
+print(efa.obl.5, cut=.5)
+
+# how similar are these solutions? Let's check with a congruence coefficient ##
+factor.congruence(efa.obl.5,efa.obl.7)
+
+
+
+
+
+
+fa.parallel(efa_freeze, fm = 'minres', fa = 'fa', plot = FALSE)
+fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
+
+
+#efa_df<-freezing_raw %>%
+  #dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
+#fa.parallel(efa_df, fm = 'minres', fa = 'fa', plot = FALSE)
+#fa(efa_df,nfactors=11,rotate="oblimin",fm="minres")
 
 
 
@@ -2081,6 +2248,8 @@ save(age_23plus,file = "age_23plus.RData")
 save(dep_plot, file = "dep_plot.RData")
 save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
 save(T1_dup, file = "T1_dup.RData")
+save(afq, file = "afq.RData")
+save(afq_endorsement, file = "afq_endorsement.Rdata")
 
 
 
