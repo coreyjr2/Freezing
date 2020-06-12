@@ -503,6 +503,78 @@ ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) +
   geom_histogram(binwidth=5, fill="white", position = "dodge")
 
 
+##########
+## LEC  ##
+##########
+
+ggplot(freezing_raw_d_age, aes(x=lec_1.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Natural Disaster")
+
+ggplot(freezing_raw_d_age, aes(x=lec_2.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Fire or Explosion")
+
+ggplot(freezing_raw_d_age, aes(x=lec_3.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Transportation Accident")
+
+ggplot(freezing_raw_d_age, aes(x=lec_4.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Serious Accident at Work, Home or Rec Activity")
+
+ggplot(freezing_raw_d_age, aes(x=lec_5.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Exposure to Toxic Substance")
+
+ggplot(freezing_raw_d_age, aes(x=lec_6.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Physical Assault")
+
+ggplot(freezing_raw_d_age, aes(x=lec_7.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Assault with a Weapon")
+
+ggplot(freezing_raw_d_age, aes(x=lec_8.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Sexual Assault")
+
+ggplot(freezing_raw_d_age, aes(x=lec_9.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Other Unwanted or Uncomfotable Sexual Exp")
+
+ggplot(freezing_raw_d_age, aes(x=lec_10.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Combat or Exposure to War")
+
+ggplot(freezing_raw_d_age, aes(x=lec_11.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Captivity")
+
+ggplot(freezing_raw_d_age, aes(x=lec_12.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Life-threatening illness or injury")
+
+ggplot(freezing_raw_d_age, aes(x=lec_13.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Severe Human Suffering")
+
+ggplot(freezing_raw_d_age, aes(x=lec_14.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Sudden Violent Death")
+
+ggplot(freezing_raw_d_age, aes(x=lec_15.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Sudden Accidental Death")
+
+ggplot(freezing_raw_d_age, aes(x=lec_16.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Causing Serious Injury or Harm")
+
+ggplot(freezing_raw_d_age, aes(x=lec_17.x)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Any Other")
+
 ###########
 #   ATQ   #
 ###########
@@ -723,6 +795,12 @@ psych::describe(afq_endorsement$afq_17)
 psych::describe(afq_endorsement$afq_19)
 psych::describe(afq_endorsement$afq_21)
 psych::describe(afq_endorsement$afq_23)
+
+## Visualize Endorsement Section
+ggplot(afq_endorsement, aes(x=afq_1)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Physical Assault")
+
 
 
 ## Extract Freezing Item Reponses ##
@@ -1872,7 +1950,7 @@ afq_cor_table<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8
 
 afq_cor_table<-afq_cor_table[,-1]
 
-<<<<<<< HEAD
+
 afq_cor_table<-as.data.frame(afq_cor_table)
 
 write_tsv(afq_cor_table, "AFQ_Correlations")
@@ -1935,6 +2013,8 @@ cronbach(afq.5fm)
 ## Pearson Correlation higher than .5 to the AFQ Total Score &
 ## Pearson Correlation lower than .35 to the PSWQ Total Score &
 ## Pearson Correlation lower than .35 to the MASQ_aa Total Score
+
+
 
 afq.pure.items<-afq[,c(1,3,7,8,9,11,12,14,15,18,21,24,29,30,37,38,39,41,42,44,50,52,53,57,58,59,63:69)]
 
@@ -2056,10 +2136,17 @@ pairs.panels(afq[,c(76,75,74,73)],
 ## reminder we made this df: afq.pure.items<-afq[,c(1,3,7,8,9,11,12,14,15,18,21,24,29,30,37,38,39,41,42,44,50,52,53,57,58,59,63:69)]
 alpha(afq.pure.items)
 
+x.x<-afqpure_cor_table$pswq_cor
+y.y<-afqpure_cor_table$masq_aa_cor
+z.z<-afqpure_cor_table$pure_cor
 
+scatter3d(x = afqpure_cor_table$pswq_cor, y = afqpure_cor_table$masq_aa_cor, z = afqpure_cor_table$pure_cor, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA",
+          zlab = "AFQ Pure Total", labels = TRUE)
 
+scatter3D(x.x, y.y, z.z, phi = 0, bty = "g",  type = "h", 
+          ticktype = "detailed", pch = 19, cex = 0.5)
 
-
+par(mar=c(1,1,1,1))
 ###################################################
 ##     Traditional EFA for Freezing (AFQ)        ##
 ###################################################   
@@ -2253,6 +2340,10 @@ save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
 save(T1_dup, file = "T1_dup.RData")
 save(afq, file = "afq.RData")
 save(afq_endorsement, file = "afq_endorsement.Rdata")
+save(pre_sb, file = "pre_sb.RData")
+save(post_sb, file = "post_sb.RData")
+save(afqpure_cor_table, file = "afqpure_cor_table.RData")
+save(afq_kmc, file = "afq_kmc.RData")
 
 
 
@@ -2499,6 +2590,10 @@ subscale<-c("cognitive", "cognitive", "cognitive", "cognitive",
 afq_kmc<-data.frame(item, afq_cor_table_kmc, subscale)
 colnames(afq_kmc)<-(c("item", "afq_total", "masq_aa_total", "pswq_total", "subscale"))
 
+##Rename rows for easy visualization
+
+afq_kmc<-rownames(afq_kmc)[rownames(afq_kmc) == "afqs1"] = "1"
+
 #############################
 ##### Chopping block ########
 #############################
@@ -2523,7 +2618,8 @@ afq_kmc <- afq_kmc[-c(25:27), ]
 ############### ################
 #### Time to cluster, baby ####
 ############### ################
-
+library(data.table)
+(setattr(afq_kmc, "row.names", c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","28","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69", "70")))
 
 install.packages("plot3D")
 library("plot3D")
@@ -2533,7 +2629,7 @@ x <- afq_kmc$afq_total
 y <- afq_kmc$masq_aa_total
 z <- afq_kmc$pswq_total
 
-plot3d(afq_kmc[,1:3], col=as.numeric(afq_kmc$subscale))
+#plot3D(afq_kmc[,1:3], col=as.numeric(afq_kmc$subscale))
 
 scatter3D(x, y, z, bty = "g",
           pch = 20, cex = 2, xlab = "MASQ", ylab = "PSWQ", zlab = "AFQ", main = "3D Scatterplot of Item to Scale Correlations", col.var = afq_kmc$Subscale, col = c("#1B9E77", "#D95F02", "#7570B3"), theta = 15, phi = 20)
@@ -2574,13 +2670,15 @@ km5 <- kmeans(afq_kmc[,2:4], 5)
 km6 <- kmeans(afq_kmc[,2:4], 6)
 km7 <- kmeans(afq_kmc[,2:4], 7)
 
-p1 <- fviz_cluster(km2, data = afq_kmc[,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
-p2 <- fviz_cluster(km3, data = afq_kmc[,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
-p3 <- fviz_cluster(km4, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
-p4 <- fviz_cluster(km5, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
-p5 <- fviz_cluster(km6, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
-p6 <- fviz_cluster(km7, data = afq_kmc[,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
+p1 <- fviz_cluster(km2, data = afq_kmc[,2:4], elipse.type = "convex",  pointsize = 1, labelsize = 9) + theme_minimal() + ggtitle("k = 2") 
+p2 <- fviz_cluster(km3, data = afq_kmc[,2:4], elipse.type = "convex",  pointsize = 1, labelsize = 9) + theme_minimal() + ggtitle("k = 3")
+p3 <- fviz_cluster(km4, data = afq_kmc[,2:4], elipse.type = "convex",  pointsize = 1, labelsize = 9) + theme_minimal() + ggtitle("k = 4")
+p4 <- fviz_cluster(km5, data = afq_kmc[,2:4], elipse.type = "convex",  pointsize = 1, labelsize = 9) + theme_minimal() + ggtitle("k = 5")
+p5 <- fviz_cluster(km6, data = afq_kmc[,2:4], elipse.type = "convex",  pointsize = 1, labelsize = 9) + theme_minimal() + ggtitle("k = 6")
+p6 <- fviz_cluster(km7, data = afq_kmc[,2:4], elipse.type = "convex",  pointsize = 1, labelsize = 9) + theme_minimal() + ggtitle("k = 7")
 plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7"))
+
+
 
 ############################################
 ##### How many clusters should we use? #####
@@ -2600,7 +2698,10 @@ cluster<-c(1,  1,  2,  2,  2,  1,  2,  1,  1,  1,  1,  1,  2,  2,  2,  1,  1,  1
 afq_kmc<-data.frame(afq_kmc, cluster)
 afq_kmc$cluster<-as.factor(afq_kmc$cluster)
 
-scatter3d(x = afq_kmc$pswq_total, y = afq_kmc$masq_aa_total, z = afq_kmc$afq_total, groups = afq_kmc$cluster, surface=FALSE, ellipsoid = TRUE)
+scatter3d(x = afq_kmc$pswq_total, y = afq_kmc$masq_aa_total, z = afq_kmc$afq_total, groups = afq_kmc$cluster, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA",
+          zlab = "AFQ Total", ellipsoid = TRUE)
+
+text3D(x, y, z,  labels = rownames(afq_kmc),add = TRUE, colkey = FALSE, cex = 0.5)
 
 ################################################
 #### Cluster for all items in the scale     #### 
