@@ -37,6 +37,7 @@ install.packages("psy")
 library(psy)
 library(plyr)
 library(dplyr)
+library(tidyr)
 
 ##Import data **be sure to order by name before importing so the order of participants matches the Age file
 freezing_raw<-read.csv(file.choose())
@@ -638,6 +639,18 @@ t.test(pswq_total.x ~ age_trend, data = post_sb)
 ## No significant difference before spring break
 ## Significant difference AFTER spring break! Tell this story!!
 
+## Let's run a two-way ANOVA for unbalanced design
+library(car)
+pswq_anova <- aov(pswq_total.x ~ timepoint * age_trend, data = freezing_raw_d_age)
+Anova(pswq_anova, type = "III")
+
+install.packages("pander")
+library(pander)
+
+fit.lm2<- aov(pswq_total.x ~ timepoint * age_trend, data = freezing_raw_d_age) 
+thsd<-TukeyHSD(fit.lm2)
+pander(thsd$`timepoint:age_trend`)
+
 ## T test Worry scores by duplicated and calendar date
 
 t.test(pswq_total.x ~ duplicated, data = pre_sb)
@@ -707,9 +720,45 @@ t.test(rrq_total.x ~ age_trend, data = pre_sb)
 t.test(rrq_total.x ~ age_trend, data = post_sb)
 ## No Significance
 
+###############
+#  SIAS (ST)  #
+###############
 
+# Let's assess the stereotype threat measure used in our data
 
+#create subscale total scores; 1-strongly agree:7-strongly disagree, low scores = high susceptibility, average item score of 2.5 or less denotes high susceptibility
 
+#gender identification
+freezing_raw_d_age$sias_gi_total<-rowSums(freezing_raw_d_age[,c(149,152,158,164)])
+psych::describe(freezing_raw_d_age$sias_gi_total)
+
+#math identification
+freezing_raw_d_age$sias_mi_total<-rowSums(freezing_raw_d_age[,c(150,159,174,177,180,183)])
+psych::describe(freezing_raw_d_age$sias_mi_total)
+
+#ethnicity identification
+freezing_raw_d_age$sias_ei_total<-rowSums(freezing_raw_d_age[,c(155,165,170,171)])
+psych::describe(freezing_raw_d_age$sias_ei_total)
+
+#gender stigma consciousness
+freezing_raw_d_age$sias_gsc_total<-rowSums(freezing_raw_d_age[,c(153,161,166,172,178)])
+psych::describe(freezing_raw_d_age$sias_gsc_total)
+
+#ethnicity stigma consciousness
+freezing_raw_d_age$sias_esc_total<-rowSums(freezing_raw_d_age[,c(157,175,179,181,184)])
+psych::describe(freezing_raw_d_age$sias_esc_total)
+
+#Negative Affect
+freezing_raw_d_age$sias_na_total<-rowSums(freezing_raw_d_age[,c(185,187,188,189,190,191)])
+psych::describe(freezing_raw_d_age$sias_na_total)
+
+#Check Correlation with other SIAS subscales
+pairs.panels(freezing_raw_d_age[,c(400:405)], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
 
 ##############################
 ## Compare Within Subjects  ##
@@ -2147,6 +2196,192 @@ scatter3D(x.x, y.y, z.z, phi = 0, bty = "g",  type = "h",
           ticktype = "detailed", pch = 19, cex = 0.5)
 
 par(mar=c(1,1,1,1))
+
+
+### Top 16 pure items, highest correlation with Pure Total
+
+# top 16 items in column form: afq[,c(8,9,18,21,30,41,44,52,53,63:69)]
+# top 16 items by item name: 8,9,18,21,31,42,45,53,54,64:70
+
+### 8:I did not feel present in the moment
+### 9:I felt detached
+### 18: My mind felt stuck
+### 21: I wanted to run away, but could not
+
+### 31: My stomach sank
+### 42: I felt petrified
+### 45: I could not take a deep breath
+### 53: I was shaking
+### 54: I felt keyed up or on edge
+
+### 64: I felt humiliated
+### 65: I felt like there was a spotlight on me during what happened
+### 66: I felt like there was a spotlight on me after what happened
+### 67: I felt like I was the center of attention
+### 68: I felt like people were watching my every move
+### 69: I felt like people could see right through me
+### 70: I felt pressure from others about how I should respond
+
+# Make new correlation table for visualization
+pure16_cor_table<- dplyr::bind_rows(afq_8_cor,afq_9_cor,afq_18_cor,afq_21_cor,
+                                    afq_30_cor,afq_41_cor,afq_44_cor,afq_52_cor,afq_53_cor,
+                                    afq_63_cor,afq_64_cor,afq_65_cor,afq_66_cor,afq_67_cor,afq_68_cor,afq_69_cor)
+
+ind <- seq(1, nrow(pure16_cor_table), by=5)
+pure16_cor_table<-pure16_cor_table[ind, ]
+
+#rename rows for easy visualization
+library(data.table)
+pure16_cor_table<-(setattr(pure16_cor_table,"row.names",c("8","9","18","21","31","42","45","53","54","64","65","66","67","68","69","70")))
+
+#Plot
+install.packages("scatterplot3d")
+library(scatterplot3d)
+install.packages("addgrids3d")
+library(addgrids3d)
+
+#reorder columns for plotting
+pure16_cor_table<-pure16_cor_table[,c(1,3,4,2)]
+
+x <- pure16_cor_table$pure_total
+y <- pure16_cor_table$masq_aa_total
+z <- pure16_cor_table$pswq_total
+
+scatterplot3d(pure16_cor_table[,1:3], pch = FALSE, type="h")
+pure_s3d <- scatterplot3d(pure16_cor_table[,1:3], pch = FALSE, type="h")
+text(pure_s3d$xyz.convert(pure16_cor_table[, 1:3]), labels = rownames(pure16_cor_table),
+     cex= 1, col = "red")
+#add grid lines
+
+source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
+pure_s3d <- scatterplot3d(pure16_cor_table[,1:3], pch = "", grid=FALSE, box = FALSE)
+addgrids3d(pure16_cor_table[,1:3], grid = c("xy","xz","yz"))
+pure_s3d$points3d(pure16_cor_table[,1:3], pch=" ", type="h")
+text(pure_s3d$xyz.convert(pure16_cor_table[, 1:3]), labels = rownames(pure16_cor_table),
+     cex= 1.5, col = "red")
+
+#### Now... let's do this for the lowest correlated to PSWQ & MASQ AA
+
+## MASQ
+### Top 16 low MASQ items, lowest correlation with MASQ Total of pure items
+
+# top 16 items in column form: afq[,c(1,8,12,14,15,30,37,38,39,53,57,58,59,64,68,69)]
+# top 16 items by item name: 1,8,12,14,15,31,38,39,40,54,58,59,60,65,69,70
+
+### 1: My mind went blank
+### 8: I did not feel present in the moment
+### 12: I could not decide what to do
+### 14: I felt I was outside my own body
+### 15: I was stuck focusing on one thing
+
+### 31: My stomach sank
+### 38: My heart pounded
+### 39: I began to sweat
+### 40: I felt nauseous
+### 54: I felt keyed up or on edge
+
+### 58: I was embarrassed
+### 59: I was afraid of being judged
+### 60: I felt as though there were consequences to failing
+### 65: I felt like there was a spotlight on me during what happened
+### 69: I felt like people could see right through me
+### 70: I felt pressure from others about how I should respond
+
+# Make new correlation table for visualization
+lowMASQ_cor<- dplyr::bind_rows(afq_1_cor,afq_8_cor,afq_12_cor,afq_14_cor,afq_15_cor,
+                                    afq_30_cor,afq_37_cor,afq_38_cor,afq_39_cor,afq_53_cor,afq_57_cor,afq_58_cor,afq_59_cor,
+                                    afq_64_cor,afq_68_cor,afq_69_cor)
+
+ind <- seq(1, nrow(lowMASQ_cor), by=5)
+lowMASQ_cor<-lowMASQ_cor[ind, ]
+
+#rename rows for easy visualization
+library(data.table)
+lowMASQ_cor<-(setattr(lowMASQ_cor,"row.names",c("1","8","12","14","15","31","38","39","40","54","58","59","60","65","69","70")))
+
+#Plot
+install.packages("scatterplot3d")
+library(scatterplot3d)
+install.packages("addgrids3d")
+library(addgrids3d)
+
+#reorder columns for plotting
+lowMASQ_cor<-lowMASQ_cor[,c(1,3,4,2)]
+
+x <- lowMASQ_cor$pure_total
+y <- lowMASQ_cor$masq_aa_total
+z <- lowMASQ_cor$pswq_total
+
+#add grid lines
+
+source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
+MASQ_s3d <- scatterplot3d(lowMASQ_cor[,1:3], pch = " ", grid=FALSE, box = FALSE)
+addgrids3d(lowMASQ_cor[,1:3], grid = c("xy","xz","yz"))
+MASQ_s3d$points3d(lowMASQ_cor[,1:3], pch=" ", type="h")
+text(MASQ_s3d$xyz.convert(lowMASQ_cor[, 1:3]), labels = rownames(lowMASQ_cor),
+     cex= 1.5, col = "red")
+
+## pswq
+### Top 16 low PSWQ items, lowest correlation with PSWQ Total of pure items
+
+# top 16 items in column form: afq[,c(3,7,14,15,21,24,29,38,39,42,50,52,53,57,66,68)]
+# top 16 items by item name: 3,7,14,15,21,24,30,39,40,43,51,53,54,58,67,69
+
+### 3: I felt like everything slowed down
+### 7: I was too startled/shocked to take action
+### 14: I felt I was outside my own body
+### 15: I was stuck focusing on one thing
+### 21: I wanted to run away, but could not
+### 24: I was hyper-aware of being unable to think
+
+### 30: My heart skipped a beat
+### 39: I began to sweat
+### 40: I felt nauseous
+### 43: I felt like everything in my body slowed down
+### 51: I was not able to speak/scream
+### 53: I was shaking
+### 54: I felt keyed up or on edge
+
+
+### 58: I was embarrassed
+### 67: I felt like I was the center of attention
+### 69: I felt like people could see right through me
+
+
+# Make new correlation table for visualization
+lowpswq_cor<- dplyr::bind_rows(afq_3_cor,afq_7_cor,afq_14_cor,afq_15_cor,afq_21_cor,afq_24_cor,afq_29_cor,
+                               afq_38_cor,afq_39_cor,afq_42_cor,afq_50_cor,afq_52_cor,afq_53_cor,afq_57_cor,
+                               afq_66_cor,afq_68_cor)
+
+ind <- seq(1, nrow(lowpswq_cor), by=5)
+lowpswq_cor<-lowpswq_cor[ind, ]
+
+#rename rows for easy visualization
+library(data.table)
+lowpswq_cor<-(setattr(lowpswq_cor,"row.names",c("3","7","14","15","21","24","30","39","40","43","51","53","54","58","67","69")))
+
+#Plot
+install.packages("scatterplot3d")
+library(scatterplot3d)
+install.packages("addgrids3d")
+library(addgrids3d)
+
+#reorder columns for plotting
+lowpswq_cor<-lowpswq_cor[,c(1,3,4,2)]
+
+x <- lowpswq_cor$pure_total
+y <- lowpswq_cor$masq_aa_total
+z <- lowpswq_cor$pswq_total
+
+#add grid lines
+
+source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
+pswq_s3d <- scatterplot3d(lowpswq_cor[,1:3], pch = " ", grid=FALSE, box = FALSE)
+addgrids3d(lowpswq_cor[,1:3], grid = c("xy","xz","yz"))
+pswq_s3d$points3d(lowpswq_cor[,1:3], pch=" ", type="h")
+text(pswq_s3d$xyz.convert(lowpswq_cor[, 1:3]), labels = rownames(lowpswq_cor),
+     cex= 1.5, col = "red")
+
 ###################################################
 ##     Traditional EFA for Freezing (AFQ)        ##
 ###################################################   
