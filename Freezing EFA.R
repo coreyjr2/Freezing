@@ -2922,8 +2922,6 @@ plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7")
 #### NB Clust 30 indicies test ######
 install.packages("NbClust")
 library("NbClust")
-<<<<<<< HEAD
-=======
 res.nbclust <- NbClust(afq_kmc[,2:4], distance = "euclidean",
                        min.nc = 2, max.nc = 7, 
                        method = "complete", index ="all")
@@ -2931,7 +2929,7 @@ factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's opt
 
 ###Looks like 2 clusters are best solution
 
-cluster<-c(1,  1,  2,  2,  2,  1,  2,  1,  1,  1,  1,  1,  2,  2,  2,  1,  1,  1,  2,  2,  1,  1,  2,  2,  1,  2, 1,  2,  2,  2,  2,  2,  2,  1,  2,  1,  2,  1,  2,  1,  1,  1,  1,  2,  1,  2,  2,  1,  1,  2,  2,  2 , 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  1,  1,  1)
+cluster<-c(2,  2,  1,  1,  1,  2,  1,  2,  2,  2,  2,  2,  1,  1,  1,  2,  2,  2,  1,  1,  2,  2,  1,  1,  2,  1,  2,  1,  1,  1,  1,  1,  1,  2,  1,  2, 1,  2,  1,  2,  2,  2,  2,  1,  2,  1,  1,  2,  2,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  1,  2,  2,  2)
 afq_kmc<-data.frame(afq_kmc, cluster)
 afq_kmc$cluster<-as.factor(afq_kmc$cluster)
 
@@ -2944,63 +2942,15 @@ text3D(x, y, z,  labels = rownames(afq_kmc),add = TRUE, colkey = FALSE, cex = 0.
 #### Cluster for all items in the scale     #### 
 ################################################
 
-### Hierarchical clustering of item correlations ####
-di <- dist(afq_kmc[,2:4], method="euclidean")
-tree <- hclust(di, method="ward")
-afq_kmc$hcluster <- as.factor((cutree(tree, k=3)-2) %% 3 +1)
-# that modulo business just makes the coming table look nicer
-plot(tree, xlab="")
-rect.hclust(tree, k=2, border="red")
-
-############################
-#### K Means clustering ####
-############################
-
 ## Run the analsysis 
 kmeans(afq_kmc[,2:4], centers = 2, nstart = 30)
 ##Split between regular items and social items, lets look at how they operate within subscale
 
-
-##############################################
-#### Clustering within cognitive and physical  subscale #### 
-##############################################
-
-###############################
-#### What method is best? ####
-##############################
-intern_cog <- clValid(afq_kmc[1:53,2:4], nClust = 1:7, 
-                  clMethods = c("hierarchical","kmeans","pam"), validation = "internal")
-# Summary
-summary(intern_cog) %>% kable() %>% kable_styling()
-
-#################################################
-###    Let's visualize 2-7 cluster solutions  ###
-#################################################
-
-kmean_calc_c <- function(df, ...){
-  kmeans(df, scaled = ..., nstart = 30)
-}
-km2_c <- kmean_calc(afq_kmc[1:25,2:4], 2)
-km3_c <- kmean_calc(afq_kmc[1:25,2:4], 3)
-km4_c <- kmeans(afq_kmc[1:25,2:4], 4)
-km5_c <- kmeans(afq_kmc[1:25,2:4], 5)
-km6_c <- kmeans(afq_kmc[1:25,2:4], 6)
-km7_c <- kmeans(afq_kmc[1:25,2:4], 7)
-
-p1 <- fviz_cluster(km2_c, data = afq_kmc[1:25,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
-p2 <- fviz_cluster(km3_c, data = afq_kmc[1:25,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
-p3 <- fviz_cluster(km4_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
-p4 <- fviz_cluster(km5_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
-p5 <- fviz_cluster(km6_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
-p6 <- fviz_cluster(km7_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
-plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7"))
-
 ###################################################################
-##### How many clusters should we use for cognitive subscale? #####
+##### How many clusters should we use for cog/phys subscale? #####
 ###################################################################
 
 #### NB Clust 30 indicies test ######
->>>>>>> df3cd275b13d1a41b6c86b103ee8e452db0b83b1
 res.nbclust <- NbClust(afq_kmc[1:53,2:4], distance = "euclidean",
                        min.nc = 2, max.nc = 7, 
                        method = "complete", index ="all")
@@ -3036,3 +2986,92 @@ text(s3d_twoc$xyz.convert(afq_cp_kmc[, 2:4]), labels = item,
 s3d_fourc<-scatterplot3d(afq_cp_kmc[,2:4], color = as.numeric(four_cluster), pch = 16)
 text(s3d_fourc$xyz.convert(afq_cp_kmc[, 2:4]), labels = item,
      cex= 0.7)
+
+###################################################################
+##### How many clusters should we use for social subscale? #####
+###################################################################
+
+afq_social<-afq_kmc%>%
+  dplyr::filter(subscale == "social")
+
+#### NB Clust 30 indicies test ######
+res.nbclust <- NbClust(afq_social[,2:4], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+###Looks like 3 clusters are best solution
+
+##Generate three cluster solution for social
+kmeans(afq_social[,2:4], centers = 3, nstart = 30)
+
+##Generate plots of three cluster solution of social
+social_cluster<-c(1, 1, 1, 2, 2, 1, 3, 3, 3, 3, 3, 3, 1)
+afq_social<-data.frame(afq_social, social_cluster)
+afq_social$social_cluster<-as.factor(afq_social$social_cluster)
+
+### make 3d plots of three cluster solution of social
+scatter3d(x = afq_social$pswq_total, y = afq_social$masq_aa_total, z = afq_social$afq_total, groups = afq_social$social_cluster, surface=TRUE, ellipsoid = TRUE)
+
+####################################################################################
+####################################################################################
+####################################################################################
+
+##split based off of two cluster solution
+afq_kmc_blue_balls<-afq_kmc %>%
+  dplyr::filter(cluster == 2)
+afq_kmc_pink_balls<-afq_kmc %>%
+  dplyr::filter(cluster == 1)
+
+#How many clusters are best?
+res.nbclust <- NbClust(afq_kmc_blue_balls[,2:4], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+# k means the blue balls
+kmeans(afq_kmc_blue_balls[,2:4], centers = 3, nstart = 30)
+cluster_bb<-c(3, 1, 2, 2, 2, 1, 2, 3, 1, 1, 2, 2, 2, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 3, 3, 1, 1, 3, 2, 3, 2, 3, 2, 3)
+)
+afq_kmc_blue_balls<-data.frame(afq_kmc_blue_balls, cluster_bb)
+afq_kmc_blue_balls$cluster_bb<-as.factor(afq_kmc_blue_balls$cluster_bb)
+
+###make a plot
+scatter3d(x = afq_kmc_blue_balls$pswq_total, y = afq_kmc_blue_balls$masq_aa_total, z = afq_kmc_blue_balls$afq_total, groups = afq_kmc_blue_balls$cluster_bb, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA",
+          zlab = "AFQ Total", ellipsoid = TRUE)
+
+##make the data driven version of the AFQ
+afq_dd<-afq_cp_kmc%>%
+  dplyr::filter(four_cluster == 2)
+afq_social<-afq_social%>%
+  dplyr::filter(social_cluster == 3)
+afq_dd<-dplyr::bind_rows(afq_dd, afq_social)
+afq_dd<-afq_dd[,1:5]
+
+###Now let's compare the AFQ KMC to the MASQ, PSWQ, and AFQ total 
+afq_dd_items<-afq
+
+afq$DD_total<-rowSums(afq[,c(6, 8, 9, 10, 11, 18, 21, 22, 41, 43, 44, 45, 46, 48, 51, 63,64, 65, 66, 67, 68)])
+afq$dd_cog<-rowSums(afq[,c(6, 8, 9, 10, 11, 18, 21, 22)])
+afq$dd_phys<-rowSums(afq[,c(41, 43, 44, 45, 46, 48, 51)])
+afq$dd_social<-rowSums(afq[,c(63,64, 65, 66, 67, 68)])
+
+##make a dataset of the AFQ DD 
+afq_dd_items<-afq%>%
+  dplyr::select(6, 8, 9, 10, 11, 18, 21, 22, 41, 43, 44, 45, 46, 48, 51, 63,64, 65, 66, 67, 68)
+afq_dd_items$afq_total<-rowSums(afq_dd_items)
+afq_dd_items$cog_total<-rowSums(afq_dd_items[,1:8])
+afq_dd_items$phys_total<-rowSums(afq_dd_items[,9:15])
+afq_dd_items$soc_total<-rowSums(afq_dd_items[,16:21])
+
+#Do some visualization 
+pairs.panels(afq_dd_items[,22:25], 
+             method = "pearson",
+             hist.col = "#00AFBB",
+             density = TRUE,
+             ellipses = TRUE)
+pairs.panels(afq[,c(70:79)], 
+             method = "pearson",
+             hist.col = "#00AFBB",
+             density = TRUE,
+             ellipses = TRUE)
