@@ -2197,6 +2197,8 @@ scatter3D(x.x, y.y, z.z, phi = 0, bty = "g",  type = "h",
 
 par(mar=c(1,1,1,1))
 
+###top 16 associated to the afq total
+#8,9,12,14,18,21,24,42,43,45,53,54,64,65,66,69
 
 ### Top 16 pure items, highest correlation with Pure Total
 
@@ -2224,6 +2226,7 @@ par(mar=c(1,1,1,1))
 
 ## Make Pure Total
 afq$pure16_total<-rowSums(afq[,c(8,9,18,21,30,41,44,52,53,63:69)])
+
 
 ## Generate list of pearson coefficients between items and totals ##
 ## make correlation matrices objects
@@ -2283,6 +2286,26 @@ pure16_cor_table<-pure16_cor_table %>%
 pure16_cor_table<-pure16_cor_table %>%
   dplyr::rename(masq_aa_cor = masq_aa_total)
 
+
+##make a dataset of the AFQ Pure16
+pure16_items<-afq%>%
+  dplyr::select(8,9,18,21,30,41,44,52,53,63:69)
+pure16_items$pure16_total<-rowSums(pure16_items)
+pure16_items$purecog_total<-rowSums(pure16_items[,1:4])
+pure16_items$purephys_total<-rowSums(pure16_items[,5:9])
+pure16_items$puresoc_total<-rowSums(pure16_items[,10:16])
+
+pure16_items$pswq_total<-afq$pswq_total
+pure16_items$masq_aa_total<-afq$masq_aa_total
+pure16_items$afq_total<-afq$afq_total
+
+#Visualize
+pairs.panels(pure16_items[,17:23], 
+             method = "pearson",
+             hist.col = "#00AFBB",
+             density = TRUE,
+             ellipses = TRUE)
+
 #rename rows for easy visualization
 library(data.table)
 pure16_cor_table<-(setattr(pure16_cor_table,"row.names",c("8","9","18","21","31","42","45","53","54","64","65","66","67","68","69","70")))
@@ -2290,20 +2313,14 @@ pure16_cor_table<-(setattr(pure16_cor_table,"row.names",c("8","9","18","21","31"
 #Plot
 install.packages("scatterplot3d")
 library(scatterplot3d)
-install.packages("addgrids3d")
-library(addgrids3d)
 
-#reorder columns for plotting
+#reorder columns for plotting pure, pswq, & masq
 pure16_cor_table<-pure16_cor_table[,c(1,3,4,2)]
 
-x <- pure16_cor_table$pure16_total
-y <- pure16_cor_table$masq_aa_total
-z <- pure16_cor_table$pswq_total
+x <- pure16_cor_table$afq_total_cor
+y <- pure16_cor_table$masq_aa_cor
+z <- pure16_cor_table$pswq_cor
 
-scatterplot3d(pure16_cor_table[,1:3], pch = FALSE, type="h")
-pure_s3d <- scatterplot3d(pure16_cor_table[,1:3], pch = FALSE, type="h")
-text(pure_s3d$xyz.convert(pure16_cor_table[, 1:3]), labels = rownames(pure16_cor_table),
-     cex= 1, col = "red")
 #add grid lines
 
 source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
@@ -3101,6 +3118,9 @@ afq_social<-afq_social%>%
 afq_dd<-dplyr::bind_rows(afq_dd, afq_social)
 afq_dd<-afq_dd[,1:5]
 
+
+
+
 ###Now let's compare the AFQ KMC to the MASQ, PSWQ, and AFQ total 
 afq_dd_items<-afq
 
@@ -3111,11 +3131,15 @@ afq$dd_social<-rowSums(afq[,c(63,64, 65, 66, 67, 68)])
 
 ##make a dataset of the AFQ DD 
 afq_dd_items<-afq%>%
-  dplyr::select(6, 8, 9, 10, 11, 18, 21, 22, 41, 43, 44, 45, 46, 48, 51, 63,64, 65, 66, 67, 68)
-afq_dd_items$afq_total<-rowSums(afq_dd_items)
-afq_dd_items$cog_total<-rowSums(afq_dd_items[,1:8])
-afq_dd_items$phys_total<-rowSums(afq_dd_items[,9:15])
-afq_dd_items$soc_total<-rowSums(afq_dd_items[,16:21])
+  dplyr::select(6, 8, 9, 10, 11, 18, 21, 22, 41, 43, 44, 45, 46, 48, 51, 63, 64, 65, 66, 67, 68)
+
+afq_dd_items$cogdd_total<-rowSums(afq_dd_items[,1:8])
+afq_dd_items$physdd_total<-rowSums(afq_dd_items[,9:15])
+afq_dd_items$socdd_total<-rowSums(afq_dd_items[,16:21])
+afq_dd_items$DD_total<-rowSums(afq_dd_items)
+afq_dd_items$afq_total<-afq$afq_total
+afq_dd_items$pswq_total<-afq$pswq_total
+afq_dd_items$masq_aa_total<-afq$masq_aa_total
 
 #Do some visualization 
 pairs.panels(afq_dd_items[,22:25], 
@@ -3128,3 +3152,93 @@ pairs.panels(afq[,c(70:79)],
              hist.col = "#00AFBB",
              density = TRUE,
              ellipses = TRUE)
+
+## Generate list of pearson coefficients between items and totals ##
+## make correlation matrices objects
+afq_6_cor<-as.data.frame(cor(afq[, c("afqs_6", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_8_cor<-as.data.frame(cor(afq[, c("afqs_8", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_9_cor<-as.data.frame(cor(afq[, c("afqs_9", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_10_cor<-as.data.frame(cor(afq[, c("afqs_10", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_11_cor<-as.data.frame(cor(afq[, c("afqs_11", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_18_cor<-as.data.frame(cor(afq[, c("afqs_18", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_21_cor<-as.data.frame(cor(afq[, c("afqs_21", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_22_cor<-as.data.frame(cor(afq[, c("afqs_22", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_42_cor<-as.data.frame(cor(afq[, c("afqs_42", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_44_cor<-as.data.frame(cor(afq[, c("afqs_44", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_45_cor<-as.data.frame(cor(afq[, c("afqs_45", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_46_cor<-as.data.frame(cor(afq[, c("afqs_46", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_47_cor<-as.data.frame(cor(afq[, c("afqs_47", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_49_cor<-as.data.frame(cor(afq[, c("afqs_49", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_52_cor<-as.data.frame(cor(afq[, c("afqs_52", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_64_cor<-as.data.frame(cor(afq[, c("afqs_64", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_65_cor<-as.data.frame(cor(afq[, c("afqs_65", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_66_cor<-as.data.frame(cor(afq[, c("afqs_66", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_67_cor<-as.data.frame(cor(afq[, c("afqs_67", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_68_cor<-as.data.frame(cor(afq[, c("afqs_68", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_69_cor<-as.data.frame(cor(afq[, c("afqs_69", "DD_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+
+## Remove Item Colum
+afq_6_cor<-afq_6_cor[,-1]
+afq_8_cor<-afq_8_cor[,-1]
+afq_9_cor<-afq_9_cor[,-1]
+afq_10_cor<-afq_10_cor[,-1]
+afq_11_cor<-afq_11_cor[,-1]
+afq_18_cor<-afq_18_cor[,-1]
+afq_21_cor<-afq_21_cor[,-1]
+afq_22_cor<-afq_22_cor[,-1]
+afq_42_cor<-afq_42_cor[,-1]
+afq_44_cor<-afq_44_cor[,-1]
+afq_45_cor<-afq_45_cor[,-1]
+afq_46_cor<-afq_46_cor[,-1]
+afq_47_cor<-afq_47_cor[,-1]
+afq_49_cor<-afq_49_cor[,-1]
+afq_52_cor<-afq_52_cor[,-1]
+afq_64_cor<-afq_64_cor[,-1]
+afq_65_cor<-afq_65_cor[,-1]
+afq_66_cor<-afq_66_cor[,-1]
+afq_67_cor<-afq_67_cor[,-1]
+afq_68_cor<-afq_68_cor[,-1]
+afq_69_cor<-afq_69_cor[,-1]
+
+
+## append all data frames into one
+
+dd_cor_table<- dplyr::bind_rows(afq_6_cor,afq_8_cor,afq_9_cor,afq_10_cor,afq_11_cor,afq_18_cor,
+                                     afq_21_cor,afq_22_cor,afq_42_cor,afq_44_cor,
+                                     afq_45_cor,afq_46_cor,afq_47_cor,afq_49_cor,afq_52_cor,afq_64_cor,
+                                     afq_65_cor,afq_66_cor,afq_67_cor,afq_68_cor,afq_69_cor)
+
+## clear total score rows
+ind <- seq(1, nrow(dd_cor_table), by=5)
+dd_cor_table<-dd_cor_table[ind, ]
+
+## Rename Columns
+
+dd_cor_table<-dd_cor_table%>%
+  dplyr::rename(dd_cor = DD_total)
+dd_cor_table<-dd_cor_table %>%
+  dplyr::rename(afq_cor = afq_total)
+dd_cor_table<-dd_cor_table %>%
+  dplyr::rename(pswq_cor = pswq_total)
+dd_cor_table<-dd_cor_table %>%
+  dplyr::rename(masq_aa_cor = masq_aa_total)
+
+
+
+x.dd <- dd_cor_table$afq_cor
+y.dd <- dd_cor_table$masq_aa_cor
+z.dd <- dd_cor_table$pswq_cor
+
+
+#rename rows for easy visualization
+library(data.table)
+dd_cor_table<-(setattr(pure16_cor_table,"row.names",c("6", "8", "9", "10", "11", "18", "21", "22", "42", "44", "45", "46", "47", "49", "52", "64", "66", "67", "68", "69")))
+
+
+#add grid lines & Plot
+source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
+dd_s3d <- scatterplot3d(dd_cor_table[,2:4], pch = "", grid=FALSE, box = FALSE)
+addgrids3d(dd_cor_table[,2:4], grid = c("xy","xz","yz"))
+pure_s3d$points3d(dd_cor_table[,2:4], pch=" ", type="h")
+text(pure_s3d$xyz.convert(dd_cor_table[, 2:4]), labels = rownames(dd_cor_table),
+     cex= 1.5, col = "red")
