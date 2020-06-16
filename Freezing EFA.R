@@ -2589,111 +2589,38 @@ plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7")
 #### NB Clust 30 indicies test ######
 install.packages("NbClust")
 library("NbClust")
-res.nbclust <- NbClust(afq_kmc[,2:4], distance = "euclidean",
-                       min.nc = 2, max.nc = 7, 
-                       method = "complete", index ="all")
-factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
-
-###Looks like 2 clusters are best solution
-
-cluster<-c(1,  1,  2,  2,  2,  1,  2,  1,  1,  1,  1,  1,  2,  2,  2,  1,  1,  1,  2,  2,  1,  1,  2,  2,  1,  2, 1,  2,  2,  2,  2,  2,  2,  1,  2,  1,  2,  1,  2,  1,  1,  1,  1,  2,  1,  2,  2,  1,  1,  2,  2,  2 , 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  1,  1,  1)
-afq_kmc<-data.frame(afq_kmc, cluster)
-afq_kmc$cluster<-as.factor(afq_kmc$cluster)
-
-scatter3d(x = afq_kmc$pswq_total, y = afq_kmc$masq_aa_total, z = afq_kmc$afq_total, groups = afq_kmc$cluster, surface=FALSE, ellipsoid = TRUE)
-
-################################################
-#### Cluster for all items in the scale     #### 
-################################################
-
-### Hierarchical clustering of item correlations ####
-di <- dist(afq_kmc[,2:4], method="euclidean")
-tree <- hclust(di, method="ward")
-afq_kmc$hcluster <- as.factor((cutree(tree, k=3)-2) %% 3 +1)
-# that modulo business just makes the coming table look nicer
-plot(tree, xlab="")
-rect.hclust(tree, k=2, border="red")
-
-############################
-#### K Means clustering ####
-############################
-
-## Run the analsysis 
-kmeans(afq_kmc[,2:4], centers = 2, nstart = 30)
-##Split between regular items and social items, lets look at how they operate within subscale
-
-
-##############################################
-#### Clustering within cognitive and physical  subscale #### 
-##############################################
-
-###############################
-#### What method is best? ####
-##############################
-intern_cog <- clValid(afq_kmc[1:53,2:4], nClust = 1:7, 
-                  clMethods = c("hierarchical","kmeans","pam"), validation = "internal")
-# Summary
-summary(intern_cog) %>% kable() %>% kable_styling()
-
-#################################################
-###    Let's visualize 2-7 cluster solutions  ###
-#################################################
-
-kmean_calc_c <- function(df, ...){
-  kmeans(df, scaled = ..., nstart = 30)
-}
-km2_c <- kmean_calc(afq_kmc[1:25,2:4], 2)
-km3_c <- kmean_calc(afq_kmc[1:25,2:4], 3)
-km4_c <- kmeans(afq_kmc[1:25,2:4], 4)
-km5_c <- kmeans(afq_kmc[1:25,2:4], 5)
-km6_c <- kmeans(afq_kmc[1:25,2:4], 6)
-km7_c <- kmeans(afq_kmc[1:25,2:4], 7)
-
-p1 <- fviz_cluster(km2_c, data = afq_kmc[1:25,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 2") 
-p2 <- fviz_cluster(km3_c, data = afq_kmc[1:25,2:4], elipse.type = "convex") + theme_minimal() + ggtitle("k = 3")
-p3 <- fviz_cluster(km4_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 4")
-p4 <- fviz_cluster(km5_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 5")
-p5 <- fviz_cluster(km6_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 6")
-p6 <- fviz_cluster(km7_c, data = afq_kmc[1:25,2:4],  elipse.type = "convex") + theme_minimal() + ggtitle("k = 7")
-plot_grid(p1, p2, p3, p4, p5, p6, labels = c("k2", "k3", "k4", "k5", "k6", "k7"))
-
-###################################################################
-##### How many clusters should we use for cognitive subscale? #####
-###################################################################
-
-#### NB Clust 30 indicies test ######
 res.nbclust <- NbClust(afq_kmc[1:53,2:4], distance = "euclidean",
                        min.nc = 2, max.nc = 7, 
                        method = "complete", index ="all")
 factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
 
+###Looks like 2 or 4 clusters are best solution
 
-##########################################
-#### Cluster for cognitive subscale   #### 
-##########################################
-
-############################
-#### K Means clustering ####
-############################
-
-## Run the analsysis 
+##Generate two or four cluster solutions
+kmeans(afq_kmc[1:53,2:4], centers = 2, nstart = 30)
 kmeans(afq_kmc[1:53,2:4], centers = 4, nstart = 30)
-##Split between regular items and social items, lets look at how they operate within subscale
-afq_kmc_cog_phys<-afq_kmc[1:53,]
-cog_phys_cluster<-c(1,  1,  4,  3,  3,  2,  4,  2,  2,  2,  2,  1,  3,  4,  3,  1,  1,  2,  4,  4,  2,  2,  3,  4,  1,  4)
-afq_kmc_cog_phys<-data.frame(afq_kmc_cog_phys, cog_phys_cluster)
-afq_kmc_cog_phys$cog_phys_cluster<-as.factor(afq_kmc_cog_phys$cog_phys_cluster)
 
-library("rgl")
-library("car")
-scatter3d(x = afq_kmc_cog_phys$pswq_total, y = afq_kmc_cog_phys$masq_aa_total, z = afq_kmc_cog_phys$afq_total, groups = afq_kmc_cog_phys$cog_phys_cluster, surface=FALSE, ellipsoid = TRUE)
+##Generate plots of two and four cluster solutions
+two_cluster<-c(2,  2,  1,  1,  1,  2,  1,  2,  2,  2,  2,  2,  1,  1,  1,  2,  2,  2,  1,  1,  2,  2,  1,  1,  2,  1,  2,  1,  1,  1,  1,  1,  1,  2,  1, 1,  1,  2,  1,  2,  2,  2,  2,  1,  2,  1,  1,  2,  2,  1,  1,  1,  2 )
+four_cluster<-c(3,  3,  1,  4,  4,  2,  1,  2,  2,  2,  2,  3,  4,  1,  4,  3,  3,  2,  1,  1,  2,  2,  4,  1,  3,  1,  3,  1,  1,  1,  1,  1,  1,  3,  4, 3, 1,  2,  1,  2,  2,  2,  2,  4,  2,  4,  1,  2,  1,  1,  1,  1,  3)
+afq_cp_kmc<-afq_kmc[1:53,]
+afq_cp_kmc<-data.frame(afq_cp_kmc, two_cluster, four_cluster)
+afq_cp_kmc$two_cluster<-as.factor(afq_cp_kmc$two_cluster)
+afq_cp_kmc$four_cluster<-as.factor(afq_cp_kmc$four_cluster)
 
-
-library("plot3D")
+### make 3d plots of two and four cluster solutions 
+scatter3d(x = afq_cp_kmc$pswq_total, y = afq_cp_kmc$masq_aa_total, z = afq_cp_kmc$afq_total, groups = afq_cp_kmc$two_cluster, surface=FALSE, ellipsoid = TRUE)
+scatter3d(x = afq_cp_kmc$pswq_total, y = afq_cp_kmc$masq_aa_total, z = afq_cp_kmc$afq_total, groups = afq_cp_kmc$four_cluster, surface=FALSE, ellipsoid = TRUE)
 
 par(mfrow=c(1,1))
-scatter3D(afq_kmc_cog$pswq_total, afq_kmc_cog$masq_aa_total, afq_kmc_cog$afq_total, phi = 0, bty = "g", pch = 20, cex = 0.5)
+scatter3D(afq_cp_kmc$pswq_total, afq_cp_kmc$masq_aa_total, afq_cp_kmc$afq_total, phi = 0, bty = "g", pch = 20, cex = 0.5, xlab = " Correlation to PSWQ", ylab = " Correlation to MASQ AA", zlab = " Correlation to AFQ")
 # Add text
-text3D(afq_kmc_cog$pswq_total, afq_kmc_cog$masq_aa_total, afq_kmc_cog$afq_total,  labels =afq_kmc_cog$item,
+text3D(afq_cp_kmc$pswq_total, afq_cp_kmc$masq_aa_total, afq_cp_kmc$afq_total,  labels =afq_cp_kmc$item,
        add = TRUE, cex = 0.5)
-
+library("scatterplot3d") # load
+s3d_twoc<-scatterplot3d(afq_cp_kmc[,2:4], color = as.numeric(two_cluster), pch = 16)
+text(s3d_twoc$xyz.convert(afq_cp_kmc[, 2:4]), labels = item,
+     cex= 0.7)
+s3d_fourc<-scatterplot3d(afq_cp_kmc[,2:4], color = as.numeric(four_cluster), pch = 16)
+text(s3d_fourc$xyz.convert(afq_cp_kmc[, 2:4]), labels = item,
+     cex= 0.7)
