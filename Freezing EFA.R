@@ -3232,7 +3232,7 @@ z <- dd_cor_table$masq_aa_cor
 
 #rename rows for easy visualization
 library(data.table)
-dd_cor_table<-(setattr(dd_cor_table,"row.names",c("6", "8", "9", "10", "11", "18", "21", "22", "42", "44", "45", "46", "47", "49", "52", "64", "66", "67", "68", "69")))
+dd_cor_table<-(setattr(dd_cor_table,"row.names",c("6", "8", "9", "10", "11", "18", "21", "22", "42", "44", "45", "46", "47", "49", "52", "64", "65","66", "67", "68", "69")))
 
 
 #add grid lines & Plot
@@ -3240,5 +3240,5 @@ source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
 dd_s3d<-scatterplot3d(dd_cor_table[,2:4], pch = "", grid=FALSE, box = FALSE)
 addgrids3d(dd_cor_table[,2:4], grid = c("xy","xz","yz"))
 dd_s3d$points3d(dd_cor_table[,2:4], pch=" ", type="h")
-text(pure_s3d$xyz.convert(dd_cor_table[, 2:4]), labels = rownames(dd_cor_table),
+text(dd_s3d$xyz.convert(dd_cor_table[, 2:4]), labels = rownames(dd_cor_table),
      cex= 1.5, col = "red")
