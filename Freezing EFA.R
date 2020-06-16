@@ -3232,7 +3232,7 @@ z.dd <- dd_cor_table$pswq_cor
 
 #rename rows for easy visualization
 library(data.table)
-dd_cor_table<-(setattr(pure16_cor_table,"row.names",c("6", "8", "9", "10", "11", "18", "21", "22", "42", "44", "45", "46", "47", "49", "52", "64", "66", "67", "68", "69")))
+dd_cor_table<-(setattr(dd_cor_table,"row.names",c("6", "8", "9", "10", "11", "18", "21", "22", "42", "44", "45", "46", "47", "49", "52", "64", "66", "67", "68", "69")))
 
 
 #add grid lines & Plot
