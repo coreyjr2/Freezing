@@ -2222,6 +2222,48 @@ par(mar=c(1,1,1,1))
 ### 69: I felt like people could see right through me
 ### 70: I felt pressure from others about how I should respond
 
+## Make Pure Total
+afq$pure16_total<-rowSums(afq[,c(8,9,18,21,30,41,44,52,53,63:69)])
+
+## Generate list of pearson coefficients between items and totals ##
+## make correlation matrices objects
+afq_8_cor<-as.data.frame(cor(afq[, c("afqs_8", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_9_cor<-as.data.frame(cor(afq[, c("afqs_9", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_18_cor<-as.data.frame(cor(afq[, c("afqs_18", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_21_cor<-as.data.frame(cor(afq[, c("afqs_21", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_30_cor<-as.data.frame(cor(afq[, c("afqs_31", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_41_cor<-as.data.frame(cor(afq[, c("afqs_42", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_44_cor<-as.data.frame(cor(afq[, c("afqs_45", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_52_cor<-as.data.frame(cor(afq[, c("afqs_53", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_53_cor<-as.data.frame(cor(afq[, c("afqs_54", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_63_cor<-as.data.frame(cor(afq[, c("afqs_64", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_64_cor<-as.data.frame(cor(afq[, c("afqs_65", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_65_cor<-as.data.frame(cor(afq[, c("afqs_66", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_66_cor<-as.data.frame(cor(afq[, c("afqs_67", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_67_cor<-as.data.frame(cor(afq[, c("afqs_68", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_68_cor<-as.data.frame(cor(afq[, c("afqs_69", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+afq_69_cor<-as.data.frame(cor(afq[, c("afqs_70", "pure16_total", "afq_total", "pswq_total", "masq_aa_total")], method = "pearson"))
+
+## Remove Item Colum
+afq_8_cor<-afq_8_cor[,-1]
+afq_9_cor<-afq_9_cor[,-1]
+afq_18_cor<-afq_18_cor[,-1]
+afq_21_cor<-afq_21_cor[,-1]
+afq_30_cor<-afq_30_cor[,-1]
+afq_41_cor<-afq_41_cor[,-1]
+afq_44_cor<-afq_44_cor[,-1]
+afq_52_cor<-afq_52_cor[,-1]
+afq_53_cor<-afq_53_cor[,-1]
+afq_63_cor<-afq_63_cor[,-1]
+afq_64_cor<-afq_64_cor[,-1]
+afq_65_cor<-afq_65_cor[,-1]
+afq_66_cor<-afq_66_cor[,-1]
+afq_67_cor<-afq_67_cor[,-1]
+afq_68_cor<-afq_68_cor[,-1]
+afq_69_cor<-afq_69_cor[,-1]
+
+
+
 # Make new correlation table for visualization
 pure16_cor_table<- dplyr::bind_rows(afq_8_cor,afq_9_cor,afq_18_cor,afq_21_cor,
                                     afq_30_cor,afq_41_cor,afq_44_cor,afq_52_cor,afq_53_cor,
@@ -2229,6 +2271,17 @@ pure16_cor_table<- dplyr::bind_rows(afq_8_cor,afq_9_cor,afq_18_cor,afq_21_cor,
 
 ind <- seq(1, nrow(pure16_cor_table), by=5)
 pure16_cor_table<-pure16_cor_table[ind, ]
+
+## Rename Columns
+
+pure16_cor_table<-pure16_cor_table %>%
+  dplyr::rename(pure16_cor = pure16_total)
+pure16_cor_table<-pure16_cor_table %>%
+  dplyr::rename(afq_total_cor = afq_total)
+pure16_cor_table<-pure16_cor_table %>%
+  dplyr::rename(pswq_cor = pswq_total)
+pure16_cor_table<-pure16_cor_table %>%
+  dplyr::rename(masq_aa_cor = masq_aa_total)
 
 #rename rows for easy visualization
 library(data.table)
@@ -2243,7 +2296,7 @@ library(addgrids3d)
 #reorder columns for plotting
 pure16_cor_table<-pure16_cor_table[,c(1,3,4,2)]
 
-x <- pure16_cor_table$pure_total
+x <- pure16_cor_table$pure16_total
 y <- pure16_cor_table$masq_aa_total
 z <- pure16_cor_table$pswq_total
 
