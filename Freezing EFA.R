@@ -2315,19 +2315,19 @@ install.packages("scatterplot3d")
 library(scatterplot3d)
 
 #reorder columns for plotting pure, pswq, & masq
-pure16_cor_table<-pure16_cor_table[,c(1,3,4,2)]
+pure16_cor_table<-pure16_cor_table[,c(1,3,2,4)]
 
-x <- pure16_cor_table$afq_total_cor
+x <- pure16_cor_table$pure16_cor
 y <- pure16_cor_table$masq_aa_cor
 z <- pure16_cor_table$pswq_cor
 
 #add grid lines
 
 source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
-pure_s3d <- scatterplot3d(pure16_cor_table[,2:4], pch = "", grid=FALSE, box = FALSE)
-addgrids3d(pure16_cor_table[,2:4], grid = c("xy","xz","yz"))
-pure_s3d$points3d(pure16_cor_table[,2:4], pch=" ", type="h")
-text(pure_s3d$xyz.convert(pure16_cor_table[, 2:4]), labels = rownames(pure16_cor_table),
+pure_s3d <- scatterplot3d(pure16_cor_table[,1:3], main="Pure 16 Correlation", xlab= "Pure16 Cor", ylab = "MASQ AA Cor", zlab = "PSWQ Cor",pch = "", grid=FALSE, box = FALSE)
+addgrids3d(pure16_cor_table[,1:3], grid = c("xy","xz","yz"))
+pure_s3d$points3d(pure16_cor_table[,1:3], pch=" ", type="h")
+text(pure_s3d$xyz.convert(pure16_cor_table[, 1:3]), labels = rownames(pure16_cor_table),
      cex= 1.5, col = "red")
 
 #### Now... let's do this for the lowest correlated to PSWQ & MASQ AA
@@ -2632,23 +2632,6 @@ cfa.7.fit<-cfa(freeze.model.7, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
 summary(cfa.7.fit, fit.measures = T, standardized = T)
 
 
-## Save for Markdown
-save(freezing_raw_d, file = "freezing_raw_d.RData")
-save(age_18,file = "age_18.RData")
-save(age_19,file = "age_19.RData")
-save(age_20,file = "age_20.RData")
-save(age_21,file = "age_21.RData")
-save(age_22,file = "age_22.RData")
-save(age_23plus,file = "age_23plus.RData")
-save(dep_plot, file = "dep_plot.RData")
-save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
-save(T1_dup, file = "T1_dup.RData")
-save(afq, file = "afq.RData")
-save(afq_endorsement, file = "afq_endorsement.Rdata")
-save(pre_sb, file = "pre_sb.RData")
-save(post_sb, file = "post_sb.RData")
-save(afqpure_cor_table, file = "afqpure_cor_table.RData")
-save(afq_kmc, file = "afq_kmc.RData")
 
 
 
@@ -3142,7 +3125,7 @@ afq_dd_items$pswq_total<-afq$pswq_total
 afq_dd_items$masq_aa_total<-afq$masq_aa_total
 
 #Do some visualization 
-pairs.panels(afq_dd_items[,22:25], 
+pairs.panels(afq_dd_items[,25:28], 
              method = "pearson",
              hist.col = "#00AFBB",
              density = TRUE,
@@ -3225,10 +3208,12 @@ dd_cor_table<-dd_cor_table %>%
 
 
 
-x <- dd_cor_table$afq_cor
+x <- dd_cor_table$dd_cor
 y <- dd_cor_table$pswq_cor
 z <- dd_cor_table$masq_aa_cor
 
+#reorder columns
+dd_cor_table<-dd_cor_table[,c(1,4,3,2)]
 
 #rename rows for easy visualization
 library(data.table)
@@ -3237,8 +3222,31 @@ dd_cor_table<-(setattr(dd_cor_table,"row.names",c("6", "8", "9", "10", "11", "18
 
 #add grid lines & Plot
 source('http://www.sthda.com/sthda/RDoc/functions/addgrids3d.r')
-dd_s3d<-scatterplot3d(dd_cor_table[,2:4], pch = "", grid=FALSE, box = FALSE)
+dd_s3d<-scatterplot3d(dd_cor_table[,2:4], main="DD Item Correlations", xlab="DD correlation", ylab="PSWQ Cor", zlab="MASQ AA Cor",pch = "", grid=FALSE, box = FALSE)
 addgrids3d(dd_cor_table[,2:4], grid = c("xy","xz","yz"))
 dd_s3d$points3d(dd_cor_table[,2:4], pch=" ", type="h")
 text(dd_s3d$xyz.convert(dd_cor_table[, 2:4]), labels = rownames(dd_cor_table),
      cex= 1.5, col = "red")
+
+
+## Save for Markdown
+save(freezing_raw_d, file = "freezing_raw_d.RData")
+save(age_18,file = "age_18.RData")
+save(age_19,file = "age_19.RData")
+save(age_20,file = "age_20.RData")
+save(age_21,file = "age_21.RData")
+save(age_22,file = "age_22.RData")
+save(age_23plus,file = "age_23plus.RData")
+save(dep_plot, file = "dep_plot.RData")
+save(freezing_raw_d_age, file = "freezing_raw_d_age.RData")
+save(T1_dup, file = "T1_dup.RData")
+save(afq, file = "afq.RData")
+save(afq_endorsement, file = "afq_endorsement.Rdata")
+save(pre_sb, file = "pre_sb.RData")
+save(post_sb, file = "post_sb.RData")
+save(afqpure_cor_table, file = "afqpure_cor_table.RData")
+save(afq_kmc, file = "afq_kmc.RData")
+save(pure16_cor_table, file = "pure16_cor_table.RData")
+save(dd_cor_table, file = "dd_cor_table.RData")
+save(pure16_items, file="pure16_items.RData")
+save(afq_dd_items, file="afq_dd_items.RData")
