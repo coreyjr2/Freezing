@@ -633,16 +633,53 @@ t.test(pre_sb$pswq_total.x, post_sb$pswq_total.x, alternative = "two.sided", var
 
 ## T test Worry scores by age trend and calendar date
 
-t.test(pswq_total.x ~ age_trend, data = pre_sb)
-t.test(pswq_total.x ~ age_trend, data = post_sb)
+t.test(pswq_total.x ~ age_trend, data = pre_sb, alternative = "greater", var.equal = FALSE)
+t.test(pswq_total.x ~ age_trend, data = post_sb, alternative = "less", var.equal = FALSE)
 
 ## No significant difference before spring break
 ## Significant difference AFTER spring break! Tell this story!!
 
 ## Let's run a two-way ANOVA for unbalanced design
 library(car)
+install.packages("PostHocTest")
 pswq_anova <- aov(pswq_total.x ~ timepoint * age_trend, data = freezing_raw_d_age)
 Anova(pswq_anova, type = "III")
+
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+library(broom)
+install.packages("datarium")
+library(datarium)
+
+ancova <- freezing_raw_d_age %>%
+  select(record_id, masq_aa_total.x, masq_ad_total.x, pswq_total.x)
+
+set.seed(123)
+ancova %>%
+  sample_n_by(pswq_total.x, size = 1)
+
+ancova %>%
+  anova_test(masq_ad_total.x ~ masq_aa_total.x*pswq_total.x)
+
+ancova_model<- lm(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x, data = ancova)
+
+model.metrics<- augment(ancova_model) %>%
+  select (-.hat, -.sigma, -.fitted, -.se.fit)
+
+head(model.metrics, 3)
+shapiro_test(model.metrics$.resid)
+model.metrics %>%
+  filter(abs(.std.resid) > 3) %>%
+  as.data.frame()
+
+res.aov <- ancova %>% anova_test(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x)
+get_anova_table(res.aov)
+
+pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "none")
+pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "bonf")
+
+TukeyHSD(pswq_anova)
 
 install.packages("pander")
 library(pander)
