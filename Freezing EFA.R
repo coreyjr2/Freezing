@@ -61,6 +61,8 @@ freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_for
                                             atq_timestamp,atq_complete,brief_timestamp,brief_complete,
                                             debriefing_form_timestamp,debriefing_form_complete))
 
+psych::describe(Age_1053$age)
+
 ## specifying column index 390 = exclusion of any incomplete data ##
 freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
 #Column 390 is the last item of data collection, if the participant did not make it that far in the survey, they did not complete all measures, and they are excluded with this line of code 
@@ -141,12 +143,10 @@ freezing_raw_d<- freezing_raw_d[,c(1,2,395,3:394)]
 freezing_raw_d$con_date<-mdy(freezing_raw_d$con_date)
 typeof(freezing_raw_d$con_date)
 
-# Remove outliers
+# Remove outliers by consent date
 freezing_raw_d_age <- freezing_raw_d %>%
   dplyr::filter (con_date >= "2020-01-31") %>%
   dplyr::filter (con_date <= "2020-05-31")
-
-
 
 #########################################
 ### Add columns for grouping analysis ###
@@ -181,18 +181,6 @@ freezing_raw_d_age$duplicated<-replace_na(freezing_raw_d_age$duplicated, replace
 freezing_raw_d_age<-freezing_raw_d_age[,c(1:396,791)]
 freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
 
-## age_new
-## Add variable to recode age
-
-freezing_raw_d_age<-freezing_raw_d_age %>%
-  mutate(age_new=case_when(
-    age %in% 18 ~ "18",
-    age %in% 19 ~ "19",
-    age %in% 20 ~ "20",
-    age %in% 21 ~ "21",
-    age %in% 22 ~ "22",
-    age %in% 23:27 ~ "23+"
-  ))
 
 ## age_trend
 ## Add variable to recode for age trends, separately
@@ -206,6 +194,36 @@ freezing_raw_d_age<-freezing_raw_d_age %>%
     age %in% 22 ~ ">20",
     age %in% 23:27 ~ ">20"
   ))
+
+## Reorder Columns
+freezing_raw_d_age<-freezing_raw_d_age[,c(1:6,398,7:397)]
+
+# Remove outliers by anx/dep measure means/sd
+
+# determine +/- 3 sd for outlier on self report measures
+psych::describe(freezing_raw_d_age$asi_total.x)
+psych::describe(freezing_raw_d_age$pswq_total.x)
+psych::describe(freezing_raw_d_age$rrq_total.x)
+psych::describe(freezing_raw_d_age$masq_aa_total.x)
+psych::describe(freezing_raw_d_age$masq_ad_total.x)
+
+typeof(freezing_raw_d_age$asi_total)
+
+freezing_no_outlier <- freezing_raw_d_age %>%
+  dplyr::filter (asi_total.x <= 60) 
+
+freezing_no_outlier <- freezing_no_outlier %>%
+  dplyr::filter (pswq_total.x >= 3)
+
+freezing_no_outlier <- freezing_no_outlier %>%
+  dplyr::filter (rrq_total.x >= 32)
+
+freezing_no_outlier <- freezing_no_outlier %>%
+  dplyr::filter (masq_aa_total.x <= 59)
+
+freezing_no_outlier <- freezing_no_outlier %>%
+  dplyr::filter (masq_ad_total.x <= 105) %>%
+  dplyr::filter (masq_ad_total.x >= 15) 
 
 
 ## Group participants by age in separate data frames for ease when extracting descriptive stats of particular scores by age
@@ -882,16 +900,61 @@ psych::describe(afq_endorsement$afq_19)
 psych::describe(afq_endorsement$afq_21)
 psych::describe(afq_endorsement$afq_23)
 
+## Calculate totals of endorsements (how many times did each participant say yes to a freezing context?)
+
+afq_endorsement$endorsed<-rowSums(afq_endorsement[,c(1,3,5,7,9,11,13,15,17,19,21,23)])
+
+psych::describe((afq_endorsement$endorsed))
+
+## Visualize endorsed totals
+
+ggplot(afq_endorsement, aes(x=endorsed)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Contexts endorsed")
+
+## Calculate time of endorsements (when did each participant experience a freezing context?)
+
+afq_endorsement$afq_2[is.na(afq_endorsement$afq_2)] = 0 
+afq_endorsement$afq_4[is.na(afq_endorsement$afq_4)] = 0 
+afq_endorsement$afq_6[is.na(afq_endorsement$afq_6)] = 0 
+afq_endorsement$afq_8[is.na(afq_endorsement$afq_8)] = 0 
+afq_endorsement$afq_10[is.na(afq_endorsement$afq_10)] = 0 
+afq_endorsement$afq_12[is.na(afq_endorsement$afq_12)] = 0 
+afq_endorsement$afq_14[is.na(afq_endorsement$afq_14)] = 0 
+afq_endorsement$afq_16[is.na(afq_endorsement$afq_16)] = 0 
+afq_endorsement$afq_18[is.na(afq_endorsement$afq_18)] = 0 
+afq_endorsement$afq_20[is.na(afq_endorsement$afq_20)] = 0 
+afq_endorsement$afq_22[is.na(afq_endorsement$afq_22)] = 0 
+afq_endorsement$afq_24[is.na(afq_endorsement$afq_24)] = 0 
+
+afq_endorsement$time<-rowSums(afq_endorsement[,c(2,4,6,8,10,12,14,16,18,20,22,24)])
+afq_endorsement$avgtime<-afq_endorsement$time/afq_endorsement$endorsed
+
+afq_endorsement<-afq_endorsement[,c(1:25,27,26)]
+
+afq_endorsement$avgtime[is.nan(afq_endorsement$avgtime)] = 0
+
+typeof(afq_endorsement)
+psych::describe((afq_endorsement$avgtime))
+
+ggplot(afq_endorsement, aes(x=avgtime) + 
+  geom_histogram(color="black", fill="white") +
+  labs(x = "Avg length of time since freeze"))
+
+
 ## Visualize Endorsement Section
 ggplot(afq_endorsement, aes(x=afq_1)) + 
   geom_histogram(color="black", fill="white") +
-  labs (x = "Physical Assault")
-
+  labs(x = "Couldn't Move or Think")
+  
+ggplot(afq_endorsement, aes(x=afq_3)) + 
+  geom_histogram(color="black", fill="white") +
+  labs (x = "Violent Situation")
 
 
 ## Extract Freezing Item Reponses ##
-afq<-freezing_raw_d %>%
-  dplyr::select(afqs_1:afq_soc_total)
+afq<-freezing_raw_d_age %>%
+  dplyr::select(afqs_1.x:afq_soc_total.x)
 
 
 ## Examine Cognitive Totals ##
@@ -911,214 +974,6 @@ hist(freezing_raw_d$afq_soc_total)
 summary(freezing_raw_d$afq_soc_total)
 describe(freezing_raw_d$afq_soc_total)
 
-
-
-## Visualize Correlations - each item to total factor score ##
-
-pairs.panels(afq[,c(1,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(2,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(3,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(4,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(5,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(6,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(7,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(8,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(9,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(10,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(11,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(12,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(13,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(14,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(15,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(16,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(17,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(18,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(19,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(20,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(21,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(22,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(23,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(24,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(25,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(26,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(27,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(28,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-
-pairs.panels(afq[,c(29,70:72)], 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-)
-#....The list goes on, one could visualize all items if necessary or desired
-
 ###########################################################################################
 ## Visualize Correlations between AFQ items & MASQ/PSWQ- each item to total factor score ##
 ###########################################################################################
@@ -1126,13 +981,15 @@ pairs.panels(afq[,c(29,70:72)],
 ## Add AFQ Total, PSWQ Total and MASQ Totals to the AFQ dataset
 
 ## Extract Freezing Item Reponses ##
-afq$pswq_total<-freezing_raw_d$pswq_total
-afq$masq_aa_total<-freezing_raw_d$masq_aa_total
 afq$afq_total<-rowSums(afq[,c(70:72)])
+afq$pswq_total<-freezing_raw_d_age$pswq_total.x
+afq$masq_aa_total<-freezing_raw_d_age$masq_aa_total.x
+afq$masq_ad_total<-freezing_raw_d_age$masq_ad_total.x
 
-## Reorder columns ##
-afq<- afq[,c(1:72,76,73:75)]
-
+# Remove outliers of afqs in AFQ set
+psych::describe(afq$afq_total)
+afq_no_outlier<-afq %>%
+  dplyr::filter(afq_total <= 293)
 
 ## Visualize Correlations
 
