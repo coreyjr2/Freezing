@@ -46,6 +46,10 @@ freezing_raw<-read.csv(file.choose())
 
 Age_1053<-read.csv(file.choose())
 
+## Import Demographics of Participants
+
+Demographics<-read.csv(file.choose())
+
 ######################################
 ## data cleaning - removing columns ##
 ######################################
@@ -61,7 +65,6 @@ freezing_raw<-dplyr::select(freezing_raw,-c(redcap_survey_identifier,consent_for
                                             atq_timestamp,atq_complete,brief_timestamp,brief_complete,
                                             debriefing_form_timestamp,debriefing_form_complete))
 
-psych::describe(Age_1053$age)
 
 ## specifying column index 390 = exclusion of any incomplete data ##
 freezing_raw<-freezing_raw[complete.cases(freezing_raw[ , 390]),]
@@ -72,24 +75,28 @@ freezing_raw$con_fn<-trimws(freezing_raw$con_fn)
 freezing_raw$con_ln<-trimws(freezing_raw$con_ln)
 Age_1053$first_name<-trimws(Age_1053$first_name)
 Age_1053$last_name<-trimws(Age_1053$last_name)
+Demographics$first_name<-trimws(Demographics$first_name)
+Demographics$last_name<-trimws(Demographics$last_name)
 
 ## Uniting first name and last name into one column ##
 freezing_raw<-tidyr::unite(freezing_raw, name, con_fn:con_ln, sep = " ", remove = TRUE)
 Age_1053<-tidyr::unite(Age_1053, name, first_name:last_name, sep = " ", remove = TRUE)
+Demographics<-tidyr::unite(Demographics, name, first_name:last_name, sep = " ", remove = TRUE)
+
 
 ## Convert name column to character
 freezing_raw$name <- as.character(freezing_raw$name)
 Age_1053$name <- as.character(Age_1053$name)
+Demographics$name <- as.character(Demographics$name)
 
 ### Make sure conversion worked - diagnostic steps ###
 ## examine the class of name column
 typeof(freezing_raw$name)
 typeof(Age_1053$name)
+typeof(Demographics$name)
 
 ## examine the structure of name column
 str(freezing_raw$name)
-
-
 
 
 ################################################################################
@@ -197,6 +204,74 @@ freezing_raw_d_age<-freezing_raw_d_age %>%
 
 ## Reorder Columns
 freezing_raw_d_age<-freezing_raw_d_age[,c(1:6,398,7:397)]
+
+
+## Clean Demographics before importing into freezing raw set
+Demographics<- Demographics[,c(2,9:19)]
+
+freezing_demo<-freezing_raw_d_age
+names(freezing_demo)[names(freezing_demo) == "name.x"] <- "name"
+freezing_demo<- merge(freezing_demo,Demographics,by="name")
+
+#reorder columns for visibility
+freezing_demo<-freezing_demo[,c(1:7, 399:409 ,8:398)]
+
+#quickly assess sample sizes of various variables
+count(freezing_demo, vars="RACE")
+count(freezing_demo, vars="GENDER")
+count(freezing_demo, vars="CLASS.SELF")
+count(freezing_demo, vars="ETHNICITY")
+
+
+#Assess the effect of Race & gender on PSWQ score
+race <- freezing_demo$RACE
+gend <- freezing_demo$GENDER
+
+#Two way Anova Test
+fit <- aov(pswq_total.x ~ RACE + GENDER + GENDER*RACE, data=freezing_demo)
+summary(fit)
+
+fit2 <- aov(masq_aa_total.x ~ RACE + GENDER + GENDER*RACE, data=freezing_demo)
+summary(fit2)
+
+fit3 <- aov(masq_ad_total.x ~ RACE + GENDER + GENDER*RACE, data=freezing_demo)
+summary(fit3)
+
+
+# MANOVA test
+res.man <- manova(cbind(pswq_total.x, masq_aa_total.x) ~ GENDER + RACE + GENDER*RACE, data = freezing_demo)
+summary(res.man)
+
+
+#visualize 
+ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=RACE)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "race")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=GENDER)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "GENDER")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=CLASS.SELF)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "SES")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=ETHNICITY)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "Ethnicity")
+
 
 # Remove outliers by anx/dep measure means/sd
 
@@ -670,6 +745,41 @@ library(broom)
 install.packages("datarium")
 library(datarium)
 
+pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "none")
+pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "bonf")
+
+TukeyHSD(pswq_anova)
+
+install.packages("pander")
+library(pander)
+
+fit.lm2<- aov(pswq_total.x ~ timepoint * age_trend, data = freezing_raw_d_age) 
+thsd<-TukeyHSD(fit.lm2)
+pander(thsd$`timepoint:age_trend`)
+
+
+## Let's check continuous covariate btwn anxious arousal, apprehension & anhedonic depression scores
+
+lm_test_1<-lm(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x + masq_aa_total.x*pswq_total.x, data = freezing_raw_d_age)
+plot(lm_test_1)
+summary(lm_test_1)
+
+lm_test_2<-lm(masq_aa_total.x ~ masq_ad_total.x+pswq_total.x + masq_ad_total.x*pswq_total.x, data = freezing_raw_d_age)
+plot(lm_test_2)
+summary(lm_test_2)
+
+lm_test_3<-lm(pswq_total.x ~ masq_ad_total.x+masq_aa_total.x + masq_ad_total.x*masq_aa_total.x, data = freezing_raw_d_age)
+plot(lm_test_3)
+summary(lm_test_3)
+
+lm_test_2<-lm(masq_ad_total.x ~ pswq_total.x*masq_aa_total.x, data = freezing_raw_d_age)
+plot(lm_test_2)
+
+lm_test_aaadpswq<-lm(pswq_total.x ~ masq_aa_total.x+masq_ad_total.x, data = freezing_raw_d_age)
+lm_test_aaadpswq<-lm(masq_aa_total.x ~ masq_ad_total.x+pswq_total.x, data = freezing_raw_d_age)
+
+
+
 ancova <- freezing_raw_d_age %>%
   select(record_id, masq_aa_total.x, masq_ad_total.x, pswq_total.x)
 
@@ -694,17 +804,6 @@ model.metrics %>%
 res.aov <- ancova %>% anova_test(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x)
 get_anova_table(res.aov)
 
-pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "none")
-pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "bonf")
-
-TukeyHSD(pswq_anova)
-
-install.packages("pander")
-library(pander)
-
-fit.lm2<- aov(pswq_total.x ~ timepoint * age_trend, data = freezing_raw_d_age) 
-thsd<-TukeyHSD(fit.lm2)
-pander(thsd$`timepoint:age_trend`)
 
 ## T test Worry scores by duplicated and calendar date
 
@@ -880,6 +979,11 @@ t.test(T1_dup$brief_emctrl_total, T2_dup$brief_emctrl_total, alternative = "less
 
 
 
+
+
+
+
+
 ###############################################################################
 ##        Rational Scale Development - Item Test Correlations                ##
 ############################################################################### 
@@ -987,9 +1091,9 @@ afq$masq_aa_total<-freezing_raw_d_age$masq_aa_total.x
 afq$masq_ad_total<-freezing_raw_d_age$masq_ad_total.x
 
 # Remove outliers of afqs in AFQ set
-psych::describe(afq$afq_total)
-afq_no_outlier<-afq %>%
-  dplyr::filter(afq_total <= 293)
+#psych::describe(afq$afq_total)
+#afq_no_outlier<-afq %>%
+ # dplyr::filter(afq_total <= 293)
 
 ## Visualize Correlations
 
