@@ -745,6 +745,7 @@ library(broom)
 install.packages("datarium")
 library(datarium)
 
+<<<<<<< HEAD
 pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "none")
 pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "bonf")
 
@@ -775,10 +776,19 @@ summary(lm_test_3)
 lm_test_2<-lm(masq_ad_total.x ~ pswq_total.x*masq_aa_total.x, data = freezing_raw_d_age)
 plot(lm_test_2)
 
+=======
+##Let's try a multiple regressions for S's and G's 
+
+lm_test_aaadpswq<-lm(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x, data = freezing_raw_d_age)
+>>>>>>> b9d7e9ad275270bde951f154a3183db92ae96ed0
 lm_test_aaadpswq<-lm(pswq_total.x ~ masq_aa_total.x+masq_ad_total.x, data = freezing_raw_d_age)
 lm_test_aaadpswq<-lm(masq_aa_total.x ~ masq_ad_total.x+pswq_total.x, data = freezing_raw_d_age)
 
 
+<<<<<<< HEAD
+=======
+#Run an ANCOVA model on AA, AD, and PSWQ
+>>>>>>> b9d7e9ad275270bde951f154a3183db92ae96ed0
 
 ancova <- freezing_raw_d_age %>%
   select(record_id, masq_aa_total.x, masq_ad_total.x, pswq_total.x)
@@ -3204,8 +3214,6 @@ dd_cor_table<-dd_cor_table %>%
 dd_cor_table<-dd_cor_table %>%
   dplyr::rename(masq_aa_cor = masq_aa_total)
 
-
-
 x <- dd_cor_table$dd_cor
 y <- dd_cor_table$pswq_cor
 z <- dd_cor_table$masq_aa_cor
@@ -3248,3 +3256,619 @@ save(pure16_cor_table, file = "pure16_cor_table.RData")
 save(dd_cor_table, file = "dd_cor_table.RData")
 save(pure16_items, file="pure16_items.RData")
 save(afq_dd_items, file="afq_dd_items.RData")
+
+################################################################
+####### Attempt 2 for kmc, removing some items a priori ########
+################################################################
+
+afq_dd_2<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afqs_70)
+#Cut the items we don't want
+#Cut 25, 26, 27
+afq_dd_2<- afq_dd_2[,-c(25:27)]
+afq_dd_2$afqs_44 <- NULL
+afq_dd_2$afqs_46 <- NULL
+afq_dd_2$afqs_47 <- NULL
+afq_dd_2$afqs_49 <- NULL
+afq_dd_2$afqs_52 <- NULL
+
+##Add the new total columns 
+afq_dd_2$afq_cog_total<-rowSums(afq_dd_2[,(1:25)])
+afq_dd_2$afq_phys_total<-rowSums(afq_dd_2[,(26:49)])
+afq_dd_2$afq_cogandphys_total<-rowSums(afq_dd_2[,c(1:49)])
+
+##Add the totals from the MASQ and the PSWQ
+afq_dd_2$pswq_total<-freezing_raw_d$pswq_total
+afq_dd_2$masq_aa_total<-freezing_raw_d$masq_aa_total
+
+## Generate list of pearson coefficients between items and totals ##
+## make correlation matrices objects
+ 
+afq_1_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_1", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_2_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_2", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_3_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_3", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_4_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_4", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_5_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_5", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_6_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_6", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_7_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_7", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_8_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_8", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_9_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_9", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_10_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_10", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_11_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_11", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_12_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_12", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_13_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_13", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_14_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_14", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_15_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_15", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_16_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_16", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_17_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_17", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_18_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_18", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_19_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_19", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_20_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_20", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_21_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_21", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_22_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_22", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_23_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_23", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_24_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_24", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_28_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_28", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_30_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_30", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_31_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_31", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_32_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_32", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_33_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_33", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_34_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_34", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_35_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_35", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_36_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_36", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_37_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_37", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_38_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_38", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_39_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_39", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_40_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_40", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_41_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_41", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_42_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_42", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_43_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_43", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_45_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_45", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_48_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_48", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_50_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_50", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_51_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_51", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_53_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_53", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_54_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_54", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_55_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_55", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_56_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_56", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_57_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_57", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_58_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_58", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
+
+
+## Remove Item Colum
+afq_1_dd_cor<-afq_1_dd_cor[,-1]
+afq_2_dd_cor<-afq_2_dd_cor[,-1]
+afq_3_dd_cor<-afq_3_dd_cor[,-1]
+afq_4_dd_cor<-afq_4_dd_cor[,-1]
+afq_5_dd_cor<-afq_5_dd_cor[,-1]
+afq_6_dd_cor<-afq_6_dd_cor[,-1]
+afq_7_dd_cor<-afq_7_dd_cor[,-1]
+afq_8_dd_cor<-afq_8_dd_cor[,-1]
+afq_9_dd_cor<-afq_9_dd_cor[,-1]
+afq_10_dd_cor<-afq_10_dd_cor[,-1]
+afq_11_dd_cor<-afq_11_dd_cor[,-1]
+afq_12_dd_cor<-afq_12_dd_cor[,-1]
+afq_13_dd_cor<-afq_13_dd_cor[,-1]
+afq_14_dd_cor<-afq_14_dd_cor[,-1]
+afq_15_dd_cor<-afq_15_dd_cor[,-1]
+afq_16_dd_cor<-afq_16_dd_cor[,-1]
+afq_17_dd_cor<-afq_17_dd_cor[,-1]
+afq_18_dd_cor<-afq_18_dd_cor[,-1]
+afq_19_dd_cor<-afq_19_dd_cor[,-1]
+afq_20_dd_cor<-afq_20_dd_cor[,-1]
+afq_21_dd_cor<-afq_21_dd_cor[,-1]
+afq_22_dd_cor<-afq_22_dd_cor[,-1]
+afq_23_dd_cor<-afq_23_dd_cor[,-1]
+afq_24_dd_cor<-afq_24_dd_cor[,-1]
+afq_28_dd_cor<-afq_28_dd_cor[,-1]
+afq_30_dd_cor<-afq_30_dd_cor[,-1]
+afq_31_dd_cor<-afq_31_dd_cor[,-1]
+afq_32_dd_cor<-afq_32_dd_cor[,-1]
+afq_33_dd_cor<-afq_33_dd_cor[,-1]
+afq_34_dd_cor<-afq_34_dd_cor[,-1]
+afq_35_dd_cor<-afq_35_dd_cor[,-1]
+afq_36_dd_cor<-afq_36_dd_cor[,-1]
+afq_37_dd_cor<-afq_37_dd_cor[,-1]
+afq_38_dd_cor<-afq_38_dd_cor[,-1]
+afq_39_dd_cor<-afq_39_dd_cor[,-1]
+afq_40_dd_cor<-afq_40_dd_cor[,-1]
+afq_41_dd_cor<-afq_41_dd_cor[,-1]
+afq_42_dd_cor<-afq_42_dd_cor[,-1]
+afq_43_dd_cor<-afq_43_dd_cor[,-1]
+afq_45_dd_cor<-afq_45_dd_cor[,-1]
+afq_48_dd_cor<-afq_48_dd_cor[,-1]
+afq_50_dd_cor<-afq_50_dd_cor[,-1]
+afq_51_dd_cor<-afq_51_dd_cor[,-1]
+afq_53_dd_cor<-afq_53_dd_cor[,-1]
+afq_54_dd_cor<-afq_54_dd_cor[,-1]
+afq_55_dd_cor<-afq_55_dd_cor[,-1]
+afq_56_dd_cor<-afq_56_dd_cor[,-1]
+afq_57_dd_cor<-afq_57_dd_cor[,-1]
+afq_58_dd_cor<-afq_58_dd_cor[,-1]
+
+## append all data frames into one
+
+afq_dd_cor_table<- dplyr::bind_rows(afq_1_dd_cor,afq_2_dd_cor,afq_3_dd_cor, afq_4_dd_cor, afq_5_dd_cor, afq_6_dd_cor, afq_7_dd_cor, afq_8_dd_cor, afq_9_dd_cor, afq_10_dd_cor, afq_11_dd_cor, afq_12_dd_cor, afq_13_dd_cor, afq_14_dd_cor, afq_15_dd_cor, afq_16_dd_cor, afq_17_dd_cor, afq_18_dd_cor, afq_19_dd_cor, afq_20_dd_cor, afq_21_dd_cor, afq_22_dd_cor, afq_23_dd_cor, afq_24_dd_cor, afq_28_dd_cor, afq_30_dd_cor, afq_31_dd_cor, afq_32_dd_cor, afq_33_dd_cor, afq_34_dd_cor, afq_35_dd_cor, afq_36_dd_cor, afq_37_dd_cor, afq_38_dd_cor, afq_39_dd_cor, afq_40_dd_cor, afq_41_dd_cor, afq_42_dd_cor, afq_43_dd_cor, afq_45_dd_cor, afq_48_dd_cor, afq_50_dd_cor, afq_51_dd_cor, afq_53_dd_cor, afq_54_dd_cor, afq_55_dd_cor, afq_56_dd_cor, afq_57_dd_cor, afq_58_dd_cor)
+
+## clear total score rows
+ind <- seq(1, nrow(afq_dd_cor_table), by=6)
+afq_dd_cor_table<-afq_dd_cor_table[ind, ]
+
+item_dd_2<-c("afq_1","afq_2","afq_3","afq_4","afq_5","afq_6","afq_7","afq_8","afq_9","afq_10","afq_11","afq_12","afq_13","afq_14","afq_15","afq_16","afq_17","afq_18","afq_19","afq_20","afq_21","afq_22","afq_23","afq_24","afq_28","afq_30","afq_31","afq_32","afq_33","afq_34","afq_35","afq_36","afq_37","afq_38","afq_39","afq_40","afq_41","afq_42","afq_43","afq_45","afq_48","afq_50","afq_51","afq_53","afq_54","afq_55","afq_56","afq_57","afq_58")
+
+subscale<-c("cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical")
+
+afq_dd_cor_table<-data.frame(item_dd_2, afq_dd_cor_table, subscale)
+colnames(afq_dd_cor_table)<-(c("item", "afq_cogandphys_total", "afq_cog_total","afq_phys_total","pswq_total","masq_aa_total", "subscale"))
+
+afq_dd_cor_table <- afq_dd_cor_table[, c(1,3,4,2,5,6,7)]
+
+
+########################################
+###### Let's move on to clustering #####
+########################################
+
+##Let's cluster and sort out what makes the most sense for the cognitive and physical subscale 
+
+##How many clusters are best?
+
+library("NbClust")
+res.nbclust <- NbClust(afq_dd_cor_table[,(4:6)], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+# let's do the clustering
+kmeans(afq_dd_cor_table[,4:6], centers = 3, nstart = 30)
+cluster_dd_cogphys<-c(2,   2,   1,   3,   3,   2,   1,   2,   2,   2,   2,   2,   3,   1,   3,   2,   2,   2,   1,   1,   2,   1,   3,   1,  2,   1,   2,   1,   1,   1,   1,   1,   1,   2,   3,   2,   1,   2,   1,   2,   3,   3,   1,   1,   1,   1,   1,   2, 3)
+)
+
+##Append a column with each itme's cluster index
+afq_dd_cor_table<-data.frame(afq_dd_cor_table, cluster_dd_cogphys)
+afq_dd_cor_table$cluster_dd_cogphys<-as.factor(afq_dd_cor_table$cluster_dd_cogphys)
+
+###make a plot
+scatter3d(x = afq_dd_cor_table$pswq_total, y = afq_dd_cor_table$masq_aa_total, z = afq_dd_cor_table$afq_cogandphys_total, groups = afq_dd_cor_table$cluster_dd_cogphys, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA", zlab = "AFQ Cog and phys Total", ellipsoid = TRUE)
+
+Identify3d(x = afq_dd_cor_table$pswq_total, y = afq_dd_cor_table$masq_aa_total, z = afq_dd_cor_table$afq_cogandphys_total, groups = afq_dd_cor_table$cluster_dd_cogphys, labels = 1:length(afq_dd_cor_table$pswq_total),
+           offset = ((100/length(afq_dd_cor_table$pswq_total))^(1/3)) * 0.02)
+
+install.packages("rgl")
+library("car")
+
+##############################################################################
+###### Clustering with the whole scale after certain items were removed ######
+##############################################################################
+
+afq_dd_total<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afqs_70)
+#Cut the items we don't want
+#Cut 25, 26, 27
+afq_dd_total<- afq_dd_total[,-c(25:27)]
+afq_dd_total$afqs_44 <- NULL
+afq_dd_total$afqs_46 <- NULL
+afq_dd_total$afqs_47 <- NULL
+afq_dd_total$afqs_49 <- NULL
+afq_dd_total$afqs_52 <- NULL
+
+##Add the new total columns 
+afq_dd_total$afq_cog_total<-rowSums(afq_dd_total[,(1:28)])
+afq_dd_total$afq_phys_total<-rowSums(afq_dd_total[,(29:47)])
+afq_dd_total$afq_soc_total<-rowSums(afq_dd_total[,(48:61)])
+afq_dd_total$afq_total<-rowSums(afq_dd_total[,c(1:61)])
+
+##Add the totals from the MASQ and the PSWQ
+afq_dd_total$pswq_total<-freezing_raw_d$pswq_total
+afq_dd_total$masq_aa_total<-freezing_raw_d$masq_aa_total
+
+
+## Generate list of pearson coefficients between items and totals ##
+## make correlation matrices objects
+
+afq_1_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_1", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_2_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_2", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_3_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_3", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_4_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_4", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_5_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_5", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_6_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_6", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_7_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_7", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_8_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_8", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_9_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_9", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_10_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_10", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_11_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_11", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_12_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_12", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_13_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_13", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_14_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_14", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_15_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_15", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_16_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_16", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_17_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_17", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_18_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_18", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_19_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_19", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_20_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_20", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_21_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_21", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_22_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_22", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_23_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_23", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_24_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_24", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_28_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_28", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_30_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_30", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_31_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_31", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_32_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_32", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_33_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_33", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_34_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_34", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_35_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_35", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_36_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_36", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_37_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_37", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_38_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_38", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_39_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_39", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_40_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_40", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_41_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_41", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_42_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_42", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_43_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_43", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_45_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_45", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_48_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_48", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_50_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_50", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_51_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_51", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_53_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_53", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_54_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_54", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_55_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_55", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_56_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_56", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_57_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_57", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_58_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_58", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_59_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_59", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_60_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_60", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_61_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_61", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_62_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_62", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_63_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_63", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_64_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_64", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_65_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_65", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_66_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_66", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_67_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_67", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_68_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_68", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_69_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_69", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_70_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_70", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+
+## Remove Item Colum
+afq_1_dd_cor<-afq_1_dd_cor[,-1]
+afq_2_dd_cor<-afq_2_dd_cor[,-1]
+afq_3_dd_cor<-afq_3_dd_cor[,-1]
+afq_4_dd_cor<-afq_4_dd_cor[,-1]
+afq_5_dd_cor<-afq_5_dd_cor[,-1]
+afq_6_dd_cor<-afq_6_dd_cor[,-1]
+afq_7_dd_cor<-afq_7_dd_cor[,-1]
+afq_8_dd_cor<-afq_8_dd_cor[,-1]
+afq_9_dd_cor<-afq_9_dd_cor[,-1]
+afq_10_dd_cor<-afq_10_dd_cor[,-1]
+afq_11_dd_cor<-afq_11_dd_cor[,-1]
+afq_12_dd_cor<-afq_12_dd_cor[,-1]
+afq_13_dd_cor<-afq_13_dd_cor[,-1]
+afq_14_dd_cor<-afq_14_dd_cor[,-1]
+afq_15_dd_cor<-afq_15_dd_cor[,-1]
+afq_16_dd_cor<-afq_16_dd_cor[,-1]
+afq_17_dd_cor<-afq_17_dd_cor[,-1]
+afq_18_dd_cor<-afq_18_dd_cor[,-1]
+afq_19_dd_cor<-afq_19_dd_cor[,-1]
+afq_20_dd_cor<-afq_20_dd_cor[,-1]
+afq_21_dd_cor<-afq_21_dd_cor[,-1]
+afq_22_dd_cor<-afq_22_dd_cor[,-1]
+afq_23_dd_cor<-afq_23_dd_cor[,-1]
+afq_24_dd_cor<-afq_24_dd_cor[,-1]
+afq_28_dd_cor<-afq_28_dd_cor[,-1]
+afq_30_dd_cor<-afq_30_dd_cor[,-1]
+afq_31_dd_cor<-afq_31_dd_cor[,-1]
+afq_32_dd_cor<-afq_32_dd_cor[,-1]
+afq_33_dd_cor<-afq_33_dd_cor[,-1]
+afq_34_dd_cor<-afq_34_dd_cor[,-1]
+afq_35_dd_cor<-afq_35_dd_cor[,-1]
+afq_36_dd_cor<-afq_36_dd_cor[,-1]
+afq_37_dd_cor<-afq_37_dd_cor[,-1]
+afq_38_dd_cor<-afq_38_dd_cor[,-1]
+afq_39_dd_cor<-afq_39_dd_cor[,-1]
+afq_40_dd_cor<-afq_40_dd_cor[,-1]
+afq_41_dd_cor<-afq_41_dd_cor[,-1]
+afq_42_dd_cor<-afq_42_dd_cor[,-1]
+afq_43_dd_cor<-afq_43_dd_cor[,-1]
+afq_45_dd_cor<-afq_45_dd_cor[,-1]
+afq_48_dd_cor<-afq_48_dd_cor[,-1]
+afq_50_dd_cor<-afq_50_dd_cor[,-1]
+afq_51_dd_cor<-afq_51_dd_cor[,-1]
+afq_53_dd_cor<-afq_53_dd_cor[,-1]
+afq_54_dd_cor<-afq_54_dd_cor[,-1]
+afq_55_dd_cor<-afq_55_dd_cor[,-1]
+afq_56_dd_cor<-afq_56_dd_cor[,-1]
+afq_57_dd_cor<-afq_57_dd_cor[,-1]
+afq_58_dd_cor<-afq_58_dd_cor[,-1]
+afq_59_dd_cor<-afq_59_dd_cor[,-1]
+afq_60_dd_cor<-afq_60_dd_cor[,-1]
+afq_61_dd_cor<-afq_61_dd_cor[,-1]
+afq_62_dd_cor<-afq_62_dd_cor[,-1]
+afq_63_dd_cor<-afq_63_dd_cor[,-1]
+afq_64_dd_cor<-afq_64_dd_cor[,-1]
+afq_65_dd_cor<-afq_65_dd_cor[,-1]
+afq_66_dd_cor<-afq_66_dd_cor[,-1]
+afq_67_dd_cor<-afq_67_dd_cor[,-1]
+afq_68_dd_cor<-afq_68_dd_cor[,-1]
+afq_69_dd_cor<-afq_69_dd_cor[,-1]
+afq_70_dd_cor<-afq_70_dd_cor[,-1]
+
+## append all data frames into one
+
+afq_dd_cor_table<- dplyr::bind_rows(afq_1_dd_cor,afq_2_dd_cor,afq_3_dd_cor, afq_4_dd_cor, afq_5_dd_cor, afq_6_dd_cor, afq_7_dd_cor, afq_8_dd_cor, afq_9_dd_cor, afq_10_dd_cor, afq_11_dd_cor, afq_12_dd_cor, afq_13_dd_cor, afq_14_dd_cor, afq_15_dd_cor, afq_16_dd_cor, afq_17_dd_cor, afq_18_dd_cor, afq_19_dd_cor, afq_20_dd_cor, afq_21_dd_cor, afq_22_dd_cor, afq_23_dd_cor, afq_24_dd_cor, afq_28_dd_cor, afq_30_dd_cor, afq_31_dd_cor, afq_32_dd_cor, afq_33_dd_cor, afq_34_dd_cor, afq_35_dd_cor, afq_36_dd_cor, afq_37_dd_cor, afq_38_dd_cor, afq_39_dd_cor, afq_40_dd_cor, afq_41_dd_cor, afq_42_dd_cor, afq_43_dd_cor, afq_45_dd_cor, afq_48_dd_cor, afq_50_dd_cor, afq_51_dd_cor, afq_53_dd_cor, afq_54_dd_cor, afq_55_dd_cor, afq_56_dd_cor, afq_57_dd_cor, afq_58_dd_cor, afq_59_dd_cor, afq_60_dd_cor, afq_61_dd_cor, afq_62_dd_cor, afq_63_dd_cor, afq_64_dd_cor, afq_65_dd_cor, afq_66_dd_cor, afq_67_dd_cor, afq_68_dd_cor, afq_69_dd_cor, afq_70_dd_cor)
+
+## clear total score rows
+ind <- seq(1, nrow(afq_dd_cor_table), by=7)
+afq_dd_cor_table<-afq_dd_cor_table[ind, ]
+
+item_dd_2<-c("afq_1","afq_2","afq_3","afq_4","afq_5","afq_6","afq_7","afq_8","afq_9","afq_10","afq_11","afq_12","afq_13","afq_14","afq_15","afq_16","afq_17","afq_18","afq_19","afq_20","afq_21","afq_22","afq_23","afq_24","afq_28","afq_30","afq_31","afq_32","afq_33","afq_34","afq_35","afq_36","afq_37","afq_38","afq_39","afq_40","afq_41","afq_42","afq_43","afq_45","afq_48","afq_50","afq_51","afq_53","afq_54","afq_55","afq_56","afq_57","afq_58","afq_59","afq_60","afq_61","afq_62","afq_63","afq_64","afq_65","afq_66","afq_67","afq_68","afq_69", "afq_70")
+
+subscale<-c("cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", 
+            "social", "social", "social", "social", "social", 
+            "social", "social", "social", "social", "social", 
+            "social", "social", "social")
+
+afq_dd_cor_table<-data.frame(item_dd_2, afq_dd_cor_table, subscale)
+colnames(afq_dd_cor_table)<-(c("item", "afq_total", "afq_cog_total","afq_phys_total","afq_soc_total","pswq_total","masq_aa_total", "subscale"))
+
+afq_dd_cor_table <- afq_dd_cor_table[, c(1,3,4,5,2,6,7,8)]
+
+########################################
+###### Let's move on to clustering #####
+########################################
+
+##Let's cluster and sort out what makes the most sense for the cognitive and physical subscale 
+
+##How many clusters are best?
+
+library("NbClust")
+res.nbclust <- NbClust(afq_dd_cor_table[,(5:7)], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+# let's do the clustering
+kmeans(afq_dd_cor_table[,5:7], centers = 3, nstart = 50)
+cluster_dd_total<-c(1,   1,   2,   3,   2,   1,   2,   1,   1,   1,   1,   1,   3,   2,   3,   1,   1,   1,   2,   2,   1,   1,   3,   2, 3,   2,   1,   2,   2,   2,   2,   2,   2,   1,   3,   3,   2,   1,   2,   1,   2,   2  , 2,   2,   2,   2,   2,   1, 3,   3,   3,   1,   1,   1,   1,   1,   1,   2,   1,   1,   1 )
+)
+
+##Append a column with each itme's cluster index
+afq_dd_cor_table<-data.frame(afq_dd_cor_table, cluster_dd_total)
+afq_dd_cor_table$cluster_dd_total<-as.factor(afq_dd_cor_table$cluster_dd_total)
+
+
+
+###make a plot
+
+library('rgl')
+library('car')
+scatter3d(x = afq_dd_cor_table$pswq_total, y = afq_dd_cor_table$masq_aa_total, z = afq_dd_cor_table$afq_total, groups = afq_dd_cor_table$cluster_dd_total, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA", zlab = "AFQ Cog and phys Total", ellipsoid = TRUE)
+Identify3d(x = afq_dd_cor_table$pswq_total, y = afq_dd_cor_table$masq_aa_total, z = afq_dd_cor_table$afq_total, groups = afq_dd_cor_table$cluster_dd_total,offset = ((100/length(afq_dd_cor_table$pswq_total))^(1/3)) * 0.02)
+
+
+##############################################################################
+###### Cremoving more items after last clustering attempt (removed cluster 3 ######
+##############################################################################
+afq_dd_total<-freezing_raw_d %>%
+  dplyr::select(afqs_1:afqs_70)
+#Cut the items we don't want
+afq_dd_total$afqs_4 <- NULL
+afq_dd_total$afqs_5 <- NULL
+afq_dd_total$afqs_13 <- NULL
+afq_dd_total$afqs_15 <- NULL
+afq_dd_total$afqs_20 <- NULL
+afq_dd_total$afqs_23 <- NULL
+afq_dd_total$afqs_25 <- NULL
+afq_dd_total$afqs_26 <- NULL
+afq_dd_total$afqs_27 <- NULL
+afq_dd_total$afqs_28 <- NULL
+afq_dd_total$afqs_39 <- NULL
+afq_dd_total$afqs_40 <- NULL
+afq_dd_total$afqs_44 <- NULL
+afq_dd_total$afqs_46 <- NULL
+afq_dd_total$afqs_47 <- NULL
+afq_dd_total$afqs_48 <- NULL
+afq_dd_total$afqs_49 <- NULL
+afq_dd_total$afqs_50 <- NULL
+afq_dd_total$afqs_52 <- NULL
+afq_dd_total$afqs_54 <- NULL
+afq_dd_total$afqs_55 <- NULL
+afq_dd_total$afqs_56 <- NULL
+afq_dd_total$afqs_57 <- NULL
+afq_dd_total$afqs_58 <- NULL
+afq_dd_total$afqs_59 <- NULL
+afq_dd_total$afqs_60 <- NULL
+afq_dd_total$afqs_61 <- NULL
+afq_dd_total$afqs_63 <- NULL
+
+##Add the new total columns 
+afq_dd_total$afq_cog_total<-rowSums(afq_dd_total[,(1:18)])
+afq_dd_total$afq_phys_total<-rowSums(afq_dd_total[,(19:33)])
+afq_dd_total$afq_soc_total<-rowSums(afq_dd_total[,(34:41)])
+afq_dd_total$afq_total<-rowSums(afq_dd_total[,c(1:41)])
+
+##Add the totals from the MASQ and the PSWQ
+afq_dd_total$pswq_total<-freezing_raw_d$pswq_total
+afq_dd_total$masq_aa_total<-freezing_raw_d$masq_aa_total
+
+
+## Generate list of pearson coefficients between items and totals ##
+## make correlation matrices objects
+
+afq_1_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_1", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_2_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_2", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_3_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_3", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_6_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_6", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_7_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_7", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_8_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_8", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_9_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_9", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_10_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_10", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_11_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_11", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_12_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_12", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_14_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_14", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_16_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_16", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_17_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_17", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_18_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_18", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_19_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_19", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_21_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_21", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_22_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_22", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_24_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_24", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_30_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_30", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_31_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_31", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_32_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_32", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_33_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_33", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_34_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_34", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_35_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_35", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_36_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_36", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_37_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_37", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_38_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_38", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_41_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_41", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_42_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_42", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_43_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_43", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_45_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_45", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_51_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_51", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_53_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_53", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_62_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_62", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_64_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_64", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_65_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_65", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_66_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_66", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_67_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_67", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_68_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_68", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_69_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_69", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+afq_70_dd_cor<-as.data.frame(cor(afq_dd_total[, c("afqs_70", "afq_total", "afq_cog_total", "afq_phys_total","afq_soc_total","pswq_total", "masq_aa_total")], method = "pearson"))
+
+## Remove Item Colum
+afq_1_dd_cor<-afq_1_dd_cor[,-1]
+afq_2_dd_cor<-afq_2_dd_cor[,-1]
+afq_3_dd_cor<-afq_3_dd_cor[,-1]
+afq_6_dd_cor<-afq_6_dd_cor[,-1]
+afq_7_dd_cor<-afq_7_dd_cor[,-1]
+afq_8_dd_cor<-afq_8_dd_cor[,-1]
+afq_9_dd_cor<-afq_9_dd_cor[,-1]
+afq_10_dd_cor<-afq_10_dd_cor[,-1]
+afq_11_dd_cor<-afq_11_dd_cor[,-1]
+afq_12_dd_cor<-afq_12_dd_cor[,-1]
+afq_14_dd_cor<-afq_14_dd_cor[,-1]
+afq_16_dd_cor<-afq_16_dd_cor[,-1]
+afq_17_dd_cor<-afq_17_dd_cor[,-1]
+afq_18_dd_cor<-afq_18_dd_cor[,-1]
+afq_19_dd_cor<-afq_19_dd_cor[,-1]
+afq_21_dd_cor<-afq_21_dd_cor[,-1]
+afq_22_dd_cor<-afq_22_dd_cor[,-1]
+afq_24_dd_cor<-afq_24_dd_cor[,-1]
+afq_30_dd_cor<-afq_30_dd_cor[,-1]
+afq_31_dd_cor<-afq_31_dd_cor[,-1]
+afq_32_dd_cor<-afq_32_dd_cor[,-1]
+afq_33_dd_cor<-afq_33_dd_cor[,-1]
+afq_34_dd_cor<-afq_34_dd_cor[,-1]
+afq_35_dd_cor<-afq_35_dd_cor[,-1]
+afq_36_dd_cor<-afq_36_dd_cor[,-1]
+afq_37_dd_cor<-afq_37_dd_cor[,-1]
+afq_38_dd_cor<-afq_38_dd_cor[,-1]
+afq_41_dd_cor<-afq_41_dd_cor[,-1]
+afq_42_dd_cor<-afq_42_dd_cor[,-1]
+afq_43_dd_cor<-afq_43_dd_cor[,-1]
+afq_45_dd_cor<-afq_45_dd_cor[,-1]
+afq_51_dd_cor<-afq_51_dd_cor[,-1]
+afq_53_dd_cor<-afq_53_dd_cor[,-1]
+afq_62_dd_cor<-afq_62_dd_cor[,-1]
+afq_64_dd_cor<-afq_64_dd_cor[,-1]
+afq_65_dd_cor<-afq_65_dd_cor[,-1]
+afq_66_dd_cor<-afq_66_dd_cor[,-1]
+afq_67_dd_cor<-afq_67_dd_cor[,-1]
+afq_68_dd_cor<-afq_68_dd_cor[,-1]
+afq_69_dd_cor<-afq_69_dd_cor[,-1]
+afq_70_dd_cor<-afq_70_dd_cor[,-1]
+
+## append all data frames into one
+
+afq_dd_cor_table<- dplyr::bind_rows(afq_1_dd_cor,afq_2_dd_cor, afq_3_dd_cor, afq_6_dd_cor, afq_7_dd_cor, afq_8_dd_cor, afq_9_dd_cor, afq_10_dd_cor, afq_11_dd_cor, afq_12_dd_cor,  afq_14_dd_cor,  afq_16_dd_cor, afq_17_dd_cor, afq_18_dd_cor, afq_19_dd_cor,  afq_21_dd_cor, afq_22_dd_cor, afq_24_dd_cor,  afq_30_dd_cor, afq_31_dd_cor, afq_32_dd_cor, afq_33_dd_cor, afq_34_dd_cor, afq_35_dd_cor, afq_36_dd_cor, afq_37_dd_cor, afq_38_dd_cor,  afq_41_dd_cor, afq_42_dd_cor, afq_43_dd_cor, afq_45_dd_cor, afq_51_dd_cor, afq_53_dd_cor, afq_62_dd_cor, afq_64_dd_cor, afq_65_dd_cor, afq_66_dd_cor, afq_67_dd_cor, afq_68_dd_cor, afq_69_dd_cor, afq_70_dd_cor)
+
+## clear total score rows
+ind <- seq(1, nrow(afq_dd_cor_table), by=7)
+afq_dd_cor_table<-afq_dd_cor_table[ind, ]
+
+item_dd_2<-c("afq_1","afq_2","afq_3","afq_6","afq_7","afq_8","afq_9","afq_10","afq_11","afq_12","afq_14","afq_16","afq_17","afq_18","afq_19","afq_21","afq_22","afq_24","afq_30","afq_31","afq_32","afq_33","afq_34","afq_35","afq_36","afq_37","afq_38","afq_41","afq_42","afq_43","afq_45","afq_51","afq_53","afq_62","afq_64","afq_65","afq_66","afq_67","afq_68","afq_69", "afq_70")
+
+subscale<-c("cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive",
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical",
+            "social", "social", "social", "social", "social", 
+            "social", "social", "social")
+
+afq_dd_cor_table<-data.frame(item_dd_2, afq_dd_cor_table, subscale)
+colnames(afq_dd_cor_table)<-(c("item", "afq_total", "afq_cog_total","afq_phys_total","afq_soc_total","pswq_total","masq_aa_total", "subscale"))
+
+afq_dd_cor_table <- afq_dd_cor_table[, c(1,3,4,5,2,6,7,8)]
+
+########################################
+###### Let's move on to clustering #####
+########################################
+
+##Let's cluster and sort out what makes the most sense for the cognitive and physical subscale 
+
+##How many clusters are best?
+
+library("NbClust")
+res.nbclust <- NbClust(afq_dd_cor_table[,(5:7)], distance = "euclidean",
+                       min.nc = 2, max.nc = 7, 
+                       method = "complete", index ="all")
+
+factoextra::fviz_nbclust(res.nbclust) + theme_minimal() + ggtitle("NbClust's optimal number of clusters")
+
+# let's do the clustering
+kmeans(afq_dd_cor_table[,5:7], centers = 3, nstart = 50)
+cluster_dd_total<-c(2,   2,   3,   1,   3,   1,   1,   1,   1,   2,   3,   2, 2,   1,   3,   1,   1,   3,   3,   2,   3,   3,   3,   3,   3,   3,  2,   3,   1,   3,   1,   3,   3,   2,   1,   2,   1,   3,   2,   1,   2 )
+
+##Append a column with each itme's cluster index
+afq_dd_cor_table<-data.frame(afq_dd_cor_table, cluster_dd_total)
+afq_dd_cor_table$cluster_dd_total<-as.factor(afq_dd_cor_table$cluster_dd_total)
+
+
+
+###make a plot
+
+library('rgl')
+library('car')
+scatter3d(x = afq_dd_cor_table$pswq_total, y = afq_dd_cor_table$masq_aa_total, z = afq_dd_cor_table$afq_total, groups = afq_dd_cor_table$cluster_dd_total, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA", zlab = "AFQ Total", ellipsoid = TRUE)
+Identify3d(x = afq_dd_cor_table$pswq_total, y = afq_dd_cor_table$masq_aa_total, z = afq_dd_cor_table$afq_total, groups = afq_dd_cor_table$cluster_dd_total,offset = ((100/length(afq_dd_cor_table$pswq_total))^(1/3)) * 0.02)
+
+
+##Get some descriptives of the reduced clustered survey
+
+afq_dd_cor_table %>%
+  dplyr::filter(cluster_dd_total == 1) %>%
+  psych::describe(afq_dd_cor_table$afq_total)
+afq_dd_cor_table %>%
+  dplyr::filter(cluster_dd_total == 2) %>%
+  psych::describe(afq_dd_cor_table$afq_total)
+afq_dd_cor_table %>%
+  dplyr::filter(cluster_dd_total == 3) %>%
+  psych::describe(afq_dd_cor_table$afq_total)
