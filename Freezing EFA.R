@@ -218,36 +218,89 @@ freezing_demo<-freezing_demo[,c(1:7, 399:409 ,8:398)]
 
 #quickly assess sample sizes of various variables
 count(freezing_demo, vars="RACE")
+#should we remove small samples? 
+
 count(freezing_demo, vars="GENDER")
+#should we remove small samples? 
+#if yes..then
+freezing_demo_twogender <- freezing_demo %>%
+  dplyr::filter(record_id != 509) %>%
+  dplyr::filter(record_id != 81)
+
 count(freezing_demo, vars="CLASS.SELF")
+#should we compare extremes (i.e. lower vs upper class?)
+#if yes..then
+freezing_demo_twoclass <- freezing_demo %>%
+  dplyr::filter(CLASS.SELF == "lower class" & "upper class")
+
 count(freezing_demo, vars="ETHNICITY")
+#should we remove small samples? 
+#if yes..then
+freezing_demo_twoethn <- freezing_demo %>%
+  dplyr::filter(record_id != 689)
 
-
-#Assess the effect of Race & gender on PSWQ score
-race <- freezing_demo$RACE
-gend <- freezing_demo$GENDER
-
-#Two way Anova Test
-fit <- aov(pswq_total.x ~ RACE + GENDER + GENDER*RACE, data=freezing_demo)
+#Two way Anova Testing
+fit <- aov(pswq_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_aa_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_ad_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo)
 summary(fit)
 
-fit2 <- aov(masq_aa_total.x ~ RACE + GENDER + GENDER*RACE, data=freezing_demo)
-summary(fit2)
+fit <- aov(pswq_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_aa_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_ad_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo)
+summary(fit)
 
-fit3 <- aov(masq_ad_total.x ~ RACE + GENDER + GENDER*RACE, data=freezing_demo)
-summary(fit3)
+fit <- aov(pswq_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_aa_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_ad_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freezing_demo)
+summary(fit)
+
+fit <- aov(pswq_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_aa_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_ad_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
+summary(fit)
+
+fit <- aov(pswq_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_aa_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_ad_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data=freezing_demo)
+summary(fit)
+
+fit <- aov(pswq_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_aa_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
+summary(fit)
+fit <- aov(masq_ad_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
+summary(fit)
+
+#Anova
+fit4 <- aov(pswq_total.x ~ CLASS.SELF, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(masq_aa_total.x ~ CLASS.SELF, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(masq_ad_total.x ~ CLASS.SELF, data=freezing_demo)
+summary(fit4)
 
 
 # MANOVA test
-res.man <- manova(cbind(pswq_total.x, masq_aa_total.x) ~ GENDER + RACE + GENDER*RACE, data = freezing_demo)
+res.man <- manova(cbind(pswq_total.x, masq_aa_total.x, masq_ad_total.x) ~ GENDER + RACE + GENDER*RACE, data = freezing_demo)
 summary(res.man)
 
 
-#visualize 
+#visualize pswq
 ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=RACE)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
-  geom_smooth(method=lm) +
+  geom_smooth(method=lm, se=F) +
   labs(x= "date of completion", y= "pswq total") +
   labs(color= "race")
 
@@ -271,6 +324,75 @@ ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=ETHNICITY)) +
   geom_smooth(method=lm, se=F) +
   labs(x= "date of completion", y= "pswq total") +
   labs(color= "Ethnicity")
+
+
+#visualize masq_aa
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=RACE)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq aa total") +
+  labs(color= "race")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=GENDER)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "masq aa total") +
+  labs(color= "GENDER")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=CLASS.SELF)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq aa total") +
+  labs(color= "SES")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=ETHNICITY)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq aa total") +
+  labs(color= "Ethnicity")
+
+#visualize masq ad
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=RACE)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq ad total") +
+  labs(color= "race")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=GENDER)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "masq ad total") +
+  labs(color= "GENDER")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=CLASS.SELF)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq ad total") +
+  labs(color= "SES")
+
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=ETHNICITY)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq ad total") +
+  labs(color= "Ethnicity")
+
+#Check stats
+t.test(pswq_total.x ~ GENDER, data = freezing_demo_twogender, alternative = "two.sided", var.equal = FALSE)
+t.test(masq_aa_total.x ~ GENDER, data = freezing_demo_twogender, alternative = "two.sided", var.equal = FALSE)
+t.test(masq_ad_total.x ~ GENDER, data = freezing_demo_twogender, alternative = "two.sided", var.equal = FALSE)
+
+t.test(pswq_total.x ~ ETHNICITY, data = freezing_demo_twoethn, alternative = "two.sided", var.equal = FALSE)
+t.test(masq_aa_total.x ~ ETHNICITY, data = freezing_demo_twoethn, alternative = "two.sided", var.equal = FALSE)
+t.test(masq_ad_total.x ~ ETHNICITY, data = freezing_demo_twoethn, alternative = "two.sided", var.equal = FALSE)
+
 
 
 # Remove outliers by anx/dep measure means/sd
@@ -347,7 +469,7 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_trend)
   geom_smooth(method=lm)
 
 ## Create Linear Model
-fit<-lm(freezing_raw_d_age$con_date~freezing_raw_d_age$masq_ad_total)
+fit<-lm(freezing_raw_d_age$con_date.x~freezing_raw_d_age$masq_ad_total.x)
 plot(fit)
 anova(fit)
 coefficients(fit)
@@ -356,8 +478,8 @@ coefficients(fit)
 
 
 ## Create Subsections for all relevant data sets
-freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c(89,91,92,95,98,99,101,102,104,108,113,118,121,124)])
-freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c(94,97,100,103,105,110,115,127)])
+freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c(90,92,93,96,99,100,102,103,105,109,114,119,122,125)])
+freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c(95,98,101,104,106,111,116,128)])
 
 
 ##Low Positive Affect
@@ -380,6 +502,11 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color=age_trend))
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
 
+## Plot Low Positive Affect scores by Timepoint
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color=timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
 
 ## Depressive Mood
 
@@ -397,6 +524,12 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=age_new)) +
 
 ## Plot Depressive Mood scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=age_trend)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm)
+
+## Plot Depressive Mood scores by Timepoint
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=timepoint)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
@@ -435,15 +568,22 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color = duplicated)
   geom_smooth(method=lm)
 
 ## Plot Worry scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_new)) +
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm) +
+  labs(x= "date of completion", y= "pswq total")
+
+## Plot Worry scores by Age Trend
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_trend)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm) +
   labs(x= "date of completion", y= "pswq total") +
   labs(color= "Age")
 
-## Plot Worry scores by Age Trend
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_trend)) +
+## Plot Worry scores by Timepoint
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=timepoint)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm) +
@@ -735,7 +875,8 @@ t.test(pswq_total.x ~ age_trend, data = post_sb, alternative = "less", var.equal
 ## Let's run a two-way ANOVA for unbalanced design
 library(car)
 install.packages("PostHocTest")
-pswq_anova <- aov(pswq_total.x ~ timepoint * age_trend, data = freezing_raw_d_age)
+pswq_anova <- aov(pswq_total.x ~ con_date.x * age_trend, data = freezing_raw_d_age)
+summary(pswq_anova)
 Anova(pswq_anova, type = "III")
 
 library(tidyverse)
@@ -745,7 +886,7 @@ library(broom)
 install.packages("datarium")
 library(datarium)
 
-<<<<<<< HEAD
+
 pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "none")
 pairwise.t.test(freezing_raw_d_age$pswq_total.x, freezing_raw_d_age$age_trend, p.adj = "bonf")
 
@@ -761,35 +902,27 @@ pander(thsd$`timepoint:age_trend`)
 
 ## Let's check continuous covariate btwn anxious arousal, apprehension & anhedonic depression scores
 
-lm_test_1<-lm(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x + masq_aa_total.x*pswq_total.x, data = freezing_raw_d_age)
+lm_test_1<-glm(masq_ad_total.x ~ masq_aa_total.x + pswq_total.x + masq_aa_total.x*pswq_total.x, data = freezing_raw_d_age)
 plot(lm_test_1)
 summary(lm_test_1)
 
-lm_test_2<-lm(masq_aa_total.x ~ masq_ad_total.x+pswq_total.x + masq_ad_total.x*pswq_total.x, data = freezing_raw_d_age)
+lm_test_2<-glm(masq_aa_total.x ~ masq_ad_total.x + pswq_total.x + masq_ad_total.x*pswq_total.x, data = freezing_raw_d_age)
 plot(lm_test_2)
 summary(lm_test_2)
 
-lm_test_3<-lm(pswq_total.x ~ masq_ad_total.x+masq_aa_total.x + masq_ad_total.x*masq_aa_total.x, data = freezing_raw_d_age)
+lm_test_3<-glm(pswq_total.x ~ masq_ad_total.x + masq_aa_total.x + masq_ad_total.x*masq_aa_total.x, data = freezing_raw_d_age)
 plot(lm_test_3)
 summary(lm_test_3)
+## Let's check correlation between anxious arousal, apprehension & anhedonic depression scores
 
-lm_test_2<-lm(masq_ad_total.x ~ pswq_total.x*masq_aa_total.x, data = freezing_raw_d_age)
-plot(lm_test_2)
+pairs.panels(freezing_raw_d_age[,c("rrq_total.x", "sias_total.x", "masq_ad_total.x", "masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x")], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
 
-=======
-##Let's try a multiple regressions for S's and G's 
-
-lm_test_aaadpswq<-lm(masq_ad_total.x ~ masq_aa_total.x+pswq_total.x, data = freezing_raw_d_age)
->>>>>>> b9d7e9ad275270bde951f154a3183db92ae96ed0
-lm_test_aaadpswq<-lm(pswq_total.x ~ masq_aa_total.x+masq_ad_total.x, data = freezing_raw_d_age)
-lm_test_aaadpswq<-lm(masq_aa_total.x ~ masq_ad_total.x+pswq_total.x, data = freezing_raw_d_age)
-
-
-<<<<<<< HEAD
-=======
-#Run an ANCOVA model on AA, AD, and PSWQ
->>>>>>> b9d7e9ad275270bde951f154a3183db92ae96ed0
-
+#Ancova model?
 ancova <- freezing_raw_d_age %>%
   select(record_id, masq_aa_total.x, masq_ad_total.x, pswq_total.x)
 
@@ -1020,11 +1153,31 @@ afq_endorsement$endorsed<-rowSums(afq_endorsement[,c(1,3,5,7,9,11,13,15,17,19,21
 
 psych::describe((afq_endorsement$endorsed))
 
+## make dataset for those that only endorsed one event type
+
+afq_1endorse<- afq_endorsement %>%
+  dplyr::filter(afq_endorsement$endorsed == 1)
+
+## Visualize single endorsement
+
+
 ## Visualize endorsed totals
+count(afq_1endorse, vars="afq_1")
+count(afq_1endorse, vars="afq_3")
+count(afq_1endorse, vars="afq_5")
+count(afq_1endorse, vars="afq_7")
+count(afq_1endorse, vars="afq_9")
+count(afq_1endorse, vars="afq_11")
+count(afq_1endorse, vars="afq_13")
+count(afq_1endorse, vars="afq_15")
+
+
 
 ggplot(afq_endorsement, aes(x=endorsed)) + 
   geom_histogram(color="black", fill="white") +
   labs (x = "Contexts endorsed")
+
+count(afq_endorsement, vars="endorsed")
 
 ## Calculate time of endorsements (when did each participant experience a freezing context?)
 
@@ -1048,7 +1201,8 @@ afq_endorsement<-afq_endorsement[,c(1:25,27,26)]
 
 afq_endorsement$avgtime[is.nan(afq_endorsement$avgtime)] = 0
 
-typeof(afq_endorsement)
+typeof(afq_endorsement$avgtime)
+as.numeric(afq_endorsement$avgtime)
 psych::describe((afq_endorsement$avgtime))
 
 ggplot(afq_endorsement, aes(x=avgtime) + 
