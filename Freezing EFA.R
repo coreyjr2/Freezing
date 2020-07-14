@@ -231,7 +231,8 @@ count(freezing_demo, vars="CLASS.SELF")
 #should we compare extremes (i.e. lower vs upper class?)
 #if yes..then
 freezing_demo_twoclass <- freezing_demo %>%
-  dplyr::filter(CLASS.SELF == "lower class" & "upper class")
+  dplyr::filter(CLASS.SELF == "lower class" | CLASS.SELF == "upper class")
+t.test(pswq_total.x ~ CLASS.SELF)
 
 count(freezing_demo, vars="ETHNICITY")
 #should we remove small samples? 
@@ -325,6 +326,14 @@ ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=ETHNICITY)) +
   labs(x= "date of completion", y= "pswq total") +
   labs(color= "Ethnicity")
 
+ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=YEAR.COLLEGE)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "pswq total") +
+  labs(color= "College Year")
+
+
 
 #visualize masq_aa
 ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=RACE)) +
@@ -355,6 +364,13 @@ ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=ETHNICITY)) +
   labs(x= "date of completion", y= "masq aa total") +
   labs(color= "Ethnicity")
 
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_aa_total.x, color=YEAR.COLLEGE)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq aa total") +
+  labs(color= "College Year")
+
 #visualize masq ad
 ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=RACE)) +
   geom_point(shape=1) +
@@ -384,6 +400,13 @@ ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=ETHNICITY)) +
   labs(x= "date of completion", y= "masq ad total") +
   labs(color= "Ethnicity")
 
+ggplot(freezing_demo, aes(x=con_date.x, y=masq_ad_total.x, color=YEAR.COLLEGE)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "date of completion", y= "masq ad total") +
+  labs(color= "college Year")
+
 #Check stats
 t.test(pswq_total.x ~ GENDER, data = freezing_demo_twogender, alternative = "two.sided", var.equal = FALSE)
 t.test(masq_aa_total.x ~ GENDER, data = freezing_demo_twogender, alternative = "two.sided", var.equal = FALSE)
@@ -392,6 +415,11 @@ t.test(masq_ad_total.x ~ GENDER, data = freezing_demo_twogender, alternative = "
 t.test(pswq_total.x ~ ETHNICITY, data = freezing_demo_twoethn, alternative = "two.sided", var.equal = FALSE)
 t.test(masq_aa_total.x ~ ETHNICITY, data = freezing_demo_twoethn, alternative = "two.sided", var.equal = FALSE)
 t.test(masq_ad_total.x ~ ETHNICITY, data = freezing_demo_twoethn, alternative = "two.sided", var.equal = FALSE)
+
+t.test(pswq_total.x ~ CLASS.SELF, data = freezing_demo_twoclass, alternative = "two.sided", var.equal = FALSE)
+t.test(masq_aa_total.x ~CLASS.SELF, data = freezing_demo_twoclass, alternative = "two.sided", var.equal = FALSE)
+t.test(masq_ad_total.x ~ CLASS.SELF, data = freezing_demo_twoclass, alternative = "two.sided", var.equal = FALSE)
+
 
 
 
@@ -478,8 +506,9 @@ coefficients(fit)
 
 
 ## Create Subsections for all relevant data sets
-freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c(90,92,93,96,99,100,102,103,105,109,114,119,122,125)])
-freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c(95,98,101,104,106,111,116,128)])
+freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c("masq_01.x","masq_14.x","masq_18.x","masq_23.x","masq_27.x","masq_30.x","masq_35.x","masq_36.x","masq_40.x","masq_49.x",
+                                                                   "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
+freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
 
 
 ##Low Positive Affect
@@ -619,10 +648,50 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total.x, color=age_trend)) +
 ###########
 
 ## First, create subtotals for various sections of the brief (working memory, inhibit, shift, emotional control)
-freezing_raw_d_age$brief_wm_total<- rowSums(freezing_raw_d_age[, c(326,333,339,348,357,368,378,390)])
-freezing_raw_d_age$brief_inh_total<- rowSums(freezing_raw_d_age[,c(327,338,351,358,365,377,380,395)])
-freezing_raw_d_age$brief_shft_total<- rowSums(freezing_raw_d_age[,c(330,344,354,366,383,389)])
-freezing_raw_d_age$brief_emctrl_total<- rowSums(freezing_raw_d_age[,c(323,334,341,350,355,364,373,379,391,394)])
+freezing_raw_d_age$brief_wm_total<- rowSums(freezing_raw_d_age[, c('brief_04.x', 'brief_11.x', 'brief_17.x', 'brief_26.x', 'brief_35.x', 'brief_46.x', 'brief_56.x', 'brief_68.x')])
+freezing_raw_d_age$brief_inh_total<- rowSums(freezing_raw_d_age[,c('brief_05.x', 'brief_16.x', 'brief_29.x','brief_36.x', 'brief_43.x', 'brief_55.x','brief_58.x','brief_73.x')])
+freezing_raw_d_age$brief_shft_total<- rowSums(freezing_raw_d_age[,c('brief_08.x', 'brief_22.x', 'brief_32.x','brief_44.x', 'brief_61.x', 'brief_67.x')])
+freezing_raw_d_age$brief_emctrl_total<- rowSums(freezing_raw_d_age[,c('brief_01.x', 'brief_12.x', 'brief_19.x','brief_28.x', 'brief_33.x', 'brief_42.x','brief_51.x','brief_57.x','brief_69.x','brief_72.x')])
+
+
+## Correlation between EF and Anx/Dep?
+
+cor.test(freezing_raw_d_age$pswq_total.x,freezing_raw_d_age$brief_wm_total, method="pearson")
+lm_test_1<-glm(pswq_total.x ~ brief_wm_total, data = freezing_raw_d_age)
+plot(lm_test_1)
+summary(lm_test_1)
+cor.test(freezing_raw_d_age$pswq_total.x,freezing_raw_d_age$brief_inh_total, method="pearson")
+lm_test_1<-glm(pswq_total.x ~ brief_inh_total, data = freezing_raw_d_age)
+plot(lm_test_1)
+summary(lm_test_1)
+cor.test(freezing_raw_d_age$pswq_total.x,freezing_raw_d_age$brief_shft_total,  method="pearson")
+lm_test_1<-glm(pswq_total.x ~ brief_shft_total, data = freezing_raw_d_age)
+plot(lm_test_1)
+summary(lm_test_1)
+cor.test(freezing_raw_d_age$pswq_total.x,freezing_raw_d_age$brief_emctrl_total,  method="pearson")
+lm_test_1<-lm(pswq_total.x ~ brief_emctrl_total, data = freezing_raw_d_age)
+plot(lm_test_1)
+summary(lm_test_1)
+
+cor.test(freezing_raw_d_age$masq_aa_total.x,freezing_raw_d_age$brief_wm_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_aa_total.x,freezing_raw_d_age$brief_inh_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_aa_total.x,freezing_raw_d_age$brief_shft_total,  method="pearson")
+cor.test(freezing_raw_d_age$masq_aa_total.x,freezing_raw_d_age$brief_emctrl_total,  method="pearson")
+
+cor.test(freezing_raw_d_age$masq_ad_total.x,freezing_raw_d_age$brief_wm_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_ad_total.x,freezing_raw_d_age$brief_inh_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_ad_total.x,freezing_raw_d_age$brief_shft_total,  method="pearson")
+cor.test(freezing_raw_d_age$masq_ad_total.x,freezing_raw_d_age$brief_emctrl_total,  method="pearson")
+
+cor.test(freezing_raw_d_age$masq_dm_total,freezing_raw_d_age$brief_wm_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_dm_total,freezing_raw_d_age$brief_inh_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_dm_total,freezing_raw_d_age$brief_shft_total,  method="pearson")
+cor.test(freezing_raw_d_age$masq_dm_total,freezing_raw_d_age$brief_emctrl_total,  method="pearson")
+
+cor.test(freezing_raw_d_age$masq_lpa_total,freezing_raw_d_age$brief_wm_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_lpa_total,freezing_raw_d_age$brief_inh_total, method="pearson")
+cor.test(freezing_raw_d_age$masq_lpa_total,freezing_raw_d_age$brief_shft_total,  method="pearson")
+cor.test(freezing_raw_d_age$masq_lpa_total,freezing_raw_d_age$brief_emctrl_total,  method="pearson")
 
 
 ## Working Memory
@@ -740,6 +809,37 @@ ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) +
 ##########
 ## LEC  ##
 ##########
+
+## Create dataset to check LEC signficance
+lec<-freezing_raw_d_age %>%
+  select(,1:7,43,68,129,130,133:149,399:404)
+
+lec<-lec %>%
+  mutate(lifeevent=case_when(
+    lec_1.x %in% 1 ~ "Yes",
+    lec_2.x %in% 1 ~ "Yes",
+    lec_3.x %in% 1 ~ "Yes",
+    lec_4.x %in% 1 ~ "Yes",
+    lec_5.x %in% 1 ~ "Yes",
+    lec_6.x %in% 1 ~ "Yes",
+    lec_7.x %in% 1 ~ "Yes",
+    lec_8.x %in% 1 ~ "Yes",
+    lec_9.x %in% 1 ~ "Yes",
+    lec_10.x %in% 1 ~ "Yes",
+    lec_11.x %in% 1 ~ "Yes",
+    lec_12.x %in% 1 ~ "Yes",
+    lec_13.x %in% 1 ~ "Yes",
+    lec_14.x %in% 1 ~ "Yes",
+    lec_15.x %in% 1 ~ "Yes",
+    lec_16.x %in% 1 ~ "Yes",
+    lec_17.x %in% 1 ~ "Yes",
+  ))
+
+lec$lifeevent<-replace_na(lec$lifeevent, replace = "no")
+
+t.test(pswq_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+t.test(masq_aa_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+t.test(masq_ad_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
 
 ggplot(freezing_raw_d_age, aes(x=lec_1.x)) + 
   geom_histogram(color="black", fill="white") +
@@ -915,7 +1015,7 @@ plot(lm_test_3)
 summary(lm_test_3)
 ## Let's check correlation between anxious arousal, apprehension & anhedonic depression scores
 
-pairs.panels(freezing_raw_d_age[,c("rrq_total.x", "sias_total.x", "masq_ad_total.x", "masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x")], 
+pairs.panels(freezing_raw_d_age[,c("masq_ad_total.x", "masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x")], 
              method = "pearson", # correlation method
              hist.col = "#00AFBB",
              density = TRUE,  # show density plots
