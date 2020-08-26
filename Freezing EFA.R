@@ -100,43 +100,13 @@ str(freezing_raw$name)
 
 
 ################################################################################
-### Let's separate and generate data sets for repeat & distinct participants ###
+### Let's generate data sets for distinct participants                       ###
 ################################################################################
 
-
-## Create Duplicated df
-duplicated<-freezing_raw %>%
-  janitor::get_dupes(name)
-
-## Clean duplicated data set: remove duplicates that had less than a week between entries **clean up and dont include names, use con_date
-
-duplicated<-duplicated %>%
-  dplyr::filter(duplicated$name != "Alexis Campos",duplicated$name != "Charlie Trost",
-                duplicated$name != "Chris Chang", duplicated$name != "Grace Kuehn",
-                duplicated$name != "Jonathan Xue", duplicated$name != "Jose Navarro", 
-                duplicated$name != "Matthew Boyd", duplicated$name != "maryam shaikh",
-                duplicated$name != "Melanie Alarcon", duplicated$name != "Nicholas Severin",
-                duplicated$name != "Niv Ostroff", duplicated$name != "othmane ezzabdi", 
-                duplicated$name != "Safia Tayyabi", duplicated$name != "Sean Gardiner")
-
-
-## Generate Time 1 entry of duplicated participants
-T1_dup<-duplicated %>%
-  dplyr::filter(!duplicated(name))
-
-## Generate Time 2 entry of duplicated participants
-T2_dup<-duplicated %>%
-  dplyr::filter(duplicated(name))
-
-## Remove repeated entries within Time 2 due to questionnaire setup issue
-T2_dup<-T2_dup %>%
-  dplyr::filter(!duplicated(name))
-## Duplicated groups and dfs will be used later to analyze within subject findings
 
 ### Now, let's generate a working data set for only the distinct entries
 freezing_raw_d<-freezing_raw %>%
   dplyr::distinct(name, .keep_all = TRUE)
-
 
 ## Add Age column to Distinct Entry Data Set
 
@@ -2869,7 +2839,7 @@ efa.obl.2<-fa(efa_freeze, nfactors = 2, rotate = "oblimin")
 print(efa.obl.2, cut=.6, sort=T)
 
 efa.obl.3<-fa(efa_freeze, nfactors = 3, rotate = "oblimin")
-print(efa.obl.3, cut=.1, sort = T)
+print(efa.obl.3, cut=.6, sort = T)
 
 factor.congruence(efa.obl.2,efa.obl.3)
 
@@ -3063,6 +3033,7 @@ afq<-freezing_raw_d %>%
   dplyr::select(afqs_1:afq_soc_total)
 afq$pswq_total<-freezing_raw_d$pswq_total
 afq$masq_aa_total<-freezing_raw_d$masq_aa_total
+afq$masq_ad_total<-freezing_raw_d$masq_ad_total
 afq$afq_total<-rowSums(afq[,c(70:72)])
 
 
@@ -3348,7 +3319,7 @@ afq_kmc$cluster<-as.factor(afq_kmc$cluster)
 scatter3d(x = afq_kmc$pswq_total, y = afq_kmc$masq_aa_total, z = afq_kmc$afq_total, groups = afq_kmc$cluster, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA",
           zlab = "AFQ Total", ellipsoid = TRUE)
 
-text3D(x, y, z,  labels = rownames(afq_kmc),add = TRUE, colkey = FALSE, cex = 0.5)
+text3D(x, y, z,  labels = rownames(afq_kmc),add = TRUE, colkey = FALSE, cex =  0.5)
 
 ################################################
 #### Cluster for all items in the scale     #### 
@@ -4240,21 +4211,25 @@ afq_dd_cor_table %>%
 afq_final<-freezing_raw_d %>%
   dplyr::select(afqs_1:afqs_70)
 #Cut the items we don't want
+afq_final$afqs_3 <- NULL
 afq_final$afqs_4 <- NULL
 afq_final$afqs_5 <- NULL
 afq_final$afqs_11 <- NULL
 afq_final$afqs_12 <- NULL
 afq_final$afqs_13 <- NULL
+afq_final$afqs_14 <- NULL
 afq_final$afqs_15 <- NULL
 afq_final$afqs_17 <- NULL
 afq_final$afqs_19 <- NULL
 afq_final$afqs_20 <- NULL
 afq_final$afqs_21 <- NULL
 afq_final$afqs_23 <- NULL
+afq_final$afqs_24 <- NULL
 afq_final$afqs_25 <- NULL
 afq_final$afqs_26 <- NULL
 afq_final$afqs_27 <- NULL
 afq_final$afqs_28 <- NULL
+afq_final$afqs_30 <- NULL
 afq_final$afqs_31 <- NULL
 afq_final$afqs_32 <- NULL
 afq_final$afqs_33 <- NULL
@@ -4348,11 +4323,16 @@ afq_final$masq_dm_total<-freezing_raw_d$masq_dm_total
 ##Add new total column
 afq_final$afq_total<-rowSums(afq_final[,c(1:28)])
 psych::describe(afq_final$afq_total)
-
 summary(afq_final$afq_total)
+
+
+
 
 afq_high <- afq_final %>%
   dplyr::filter(afq_total >= 74)
+psych::describe(afq_high$afq_total)
+summary(afq_high$afq_total)
+
 afq_low <- afq_final %>%
   dplyr::filter(afq_total <= 56)
 
@@ -4504,7 +4484,14 @@ afq_cor_table$cluster_final<-as.factor(afq_cor_table$cluster_final)
 
 library('rgl')
 library('car')
-scatter3d(x = afq_cor_table$pswq_total, y = afq_cor_table$masq_aa_total, z = afq_cor_table$afq_total, groups = afq_cor_table$cluster_final, surface=FALSE, xlab = "PSWQ", ylab = "MASQ AA", zlab = "AFQ Total", ellipsoid = TRUE)
+minScale<-min(0)
+maxScale<-max(1)
+scatter3d(x = afq_cor_table$pswq_total, y = afq_cor_table$masq_aa_total, z = afq_cor_table$afq_total, 
+          axis.scales = TRUE, xlim = c(minScale, maxScale), ylim = c(minScale, maxScale), zlim = c(minScale, maxScale),groups = afq_cor_table$cluster_final, surface=FALSE,
+          xlab = "PSWQ", ylab = "MASQ AA", zlab = "AFQ Total", ellipsoid = TRUE)
+
+Identify3d(x = afq_cor_table$pswq_total, y = afq_cor_table$masq_aa_total, z = afq_cor_table$afq_cogandphys_total, 
+           groups = afq_cor_table$cluster_final,labels = 1:length(0:1))
 
 
 ##Get some descriptives of the reduced clustered survey
@@ -4764,9 +4751,9 @@ subscale<-c("cognitive", "cognitive", "cognitive", "cognitive",
 afq_cor_table<-data.frame(item_final, afq_cor_table, subscale)
 colnames(afq_cor_table)<-(c("item", "afq_total","pswq_total","masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total","subscale"))
 
-######################################################################
-##### Now, let's see how PSWQ and MASQ items map onto AFQ total  ##### 
-######################################################################
+######################################################################################
+##### Now, let's see how PSWQ and MASQ items map onto AFQ total in high freezers ##### 
+######################################################################################
 
 
 ## PSWQ
@@ -4917,6 +4904,396 @@ masq_cor_table<- dplyr::bind_rows(masq_01,masq_03,masq_14,masq_18,masq_19,masq_2
 ind <- seq(1, nrow(masq_cor_table), by=5)
 masq_cor_table<-masq_cor_table[ind, ]
 
-write.csv(afq_cor_table,"afq_cor_table.csv", row.names = TRUE)
-write.csv(pswq_cor_table,"pswq_cor_table.csv", row.names = TRUE)
-write.csv(masq_cor_table,"masq_cor_table.csv", row.names = TRUE)
+
+
+
+#################################################################
+## Collect correlations to MASQ/PSWQ totals of "low-freezers" ##
+#################################################################
+
+
+afq_1_cor<-as.data.frame(cor(afq_low[, c("afqs_1", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_2_cor<-as.data.frame(cor(afq_low[, c("afqs_2", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_3_cor<-as.data.frame(cor(afq_low[, c("afqs_3", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_6_cor<-as.data.frame(cor(afq_low[, c("afqs_6", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_7_cor<-as.data.frame(cor(afq_low[, c("afqs_7", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_8_cor<-as.data.frame(cor(afq_low[, c("afqs_8", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_9_cor<-as.data.frame(cor(afq_low[, c("afqs_9", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_10_cor<-as.data.frame(cor(afq_low[, c("afqs_10", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_14_cor<-as.data.frame(cor(afq_low[, c("afqs_14", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_16_cor<-as.data.frame(cor(afq_low[, c("afqs_16", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_18_cor<-as.data.frame(cor(afq_low[, c("afqs_18", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_22_cor<-as.data.frame(cor(afq_low[, c("afqs_22", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_24_cor<-as.data.frame(cor(afq_low[, c("afqs_24", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_30_cor<-as.data.frame(cor(afq_low[, c("afqs_30", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_36_cor<-as.data.frame(cor(afq_low[, c("afqs_36", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_37_cor<-as.data.frame(cor(afq_low[, c("afqs_37", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_41_cor<-as.data.frame(cor(afq_low[, c("afqs_41", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_42_cor<-as.data.frame(cor(afq_low[, c("afqs_42", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_43_cor<-as.data.frame(cor(afq_low[, c("afqs_43", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_51_cor<-as.data.frame(cor(afq_low[, c("afqs_51", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_62_cor<-as.data.frame(cor(afq_low[, c("afqs_62", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_64_cor<-as.data.frame(cor(afq_low[, c("afqs_64", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_65_cor<-as.data.frame(cor(afq_low[, c("afqs_65", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_66_cor<-as.data.frame(cor(afq_low[, c("afqs_66", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_67_cor<-as.data.frame(cor(afq_low[, c("afqs_67", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_68_cor<-as.data.frame(cor(afq_low[, c("afqs_68", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_69_cor<-as.data.frame(cor(afq_low[, c("afqs_69", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+afq_70_cor<-as.data.frame(cor(afq_low[, c("afqs_70", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total")], method = "pearson"))
+
+## Remove Item Colum
+afq_1_cor<-afq_1_cor[,-1]
+afq_2_cor<-afq_2_cor[,-1]
+afq_3_cor<-afq_3_cor[,-1]
+afq_6_cor<-afq_6_cor[,-1]
+afq_7_cor<-afq_7_cor[,-1]
+afq_8_cor<-afq_8_cor[,-1]
+afq_9_cor<-afq_9_cor[,-1]
+afq_10_cor<-afq_10_cor[,-1]
+afq_14_cor<-afq_14_cor[,-1]
+afq_16_cor<-afq_16_cor[,-1]
+afq_18_cor<-afq_18_cor[,-1]
+afq_22_cor<-afq_22_cor[,-1]
+afq_24_cor<-afq_24_cor[,-1]
+afq_30_cor<-afq_30_cor[,-1]
+afq_36_cor<-afq_36_cor[,-1]
+afq_37_cor<-afq_37_cor[,-1]
+afq_41_cor<-afq_41_cor[,-1]
+afq_42_cor<-afq_42_cor[,-1]
+afq_43_cor<-afq_43_cor[,-1]
+afq_51_cor<-afq_51_cor[,-1]
+afq_62_cor<-afq_62_cor[,-1]
+afq_64_cor<-afq_64_cor[,-1]
+afq_65_cor<-afq_65_cor[,-1]
+afq_66_cor<-afq_66_cor[,-1]
+afq_67_cor<-afq_67_cor[,-1]
+afq_68_cor<-afq_68_cor[,-1]
+afq_69_cor<-afq_69_cor[,-1]
+afq_70_cor<-afq_70_cor[,-1]
+
+## append all data frames into one
+
+afq_cor_table<- dplyr::bind_rows(afq_1_cor,afq_2_cor, afq_3_cor, afq_6_cor, afq_7_cor, afq_8_cor, 
+                                 afq_9_cor, afq_10_cor, afq_14_cor,  afq_16_cor, afq_18_cor, afq_22_cor, 
+                                 afq_24_cor,  afq_30_cor, afq_36_cor, afq_37_cor, afq_41_cor, afq_42_cor, 
+                                 afq_43_cor, afq_51_cor, afq_62_cor, afq_64_cor, afq_65_cor, afq_66_cor, 
+                                 afq_67_cor, afq_68_cor, afq_69_cor, afq_70_cor)
+
+## clear total score rows
+ind <- seq(1, nrow(afq_cor_table), by=7)
+afq_cor_table<-afq_cor_table[ind, ]
+
+item_final<-c("afq_1","afq_2","afq_3","afq_6","afq_7","afq_8","afq_9","afq_10",
+              "afq_14","afq_16","afq_18","afq_22","afq_24","afq_30","afq_36","afq_37",
+              "afq_41","afq_42","afq_43","afq_51","afq_62","afq_64","afq_65","afq_66","afq_67",
+              "afq_68","afq_69", "afq_70")
+
+subscale<-c("cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive", "cognitive", "cognitive", "cognitive", 
+            "cognitive",
+            "physical", "physical", "physical", "physical", 
+            "physical", "physical", "physical", 
+            "social", "social", "social", "social", "social", 
+            "social", "social", "social")
+
+
+afq_cor_table<-data.frame(item_final, afq_cor_table, subscale)
+colnames(afq_cor_table)<-(c("item", "afq_total","pswq_total","masq_aa_total", "masq_ad_total", "masq_lpa_total", "masq_dm_total","subscale"))
+
+######################################################################################
+##### Now, let's see how PSWQ and MASQ items map onto AFQ total in high freezers ##### 
+######################################################################################
+
+
+## PSWQ
+pswq_01<-as.data.frame(cor(afq_low[, c("pswq_01", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_02<-as.data.frame(cor(afq_low[, c("pswq_02", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_03<-as.data.frame(cor(afq_low[, c("pswq_03", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_04<-as.data.frame(cor(afq_low[, c("pswq_04", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_05<-as.data.frame(cor(afq_low[, c("pswq_05", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_06<-as.data.frame(cor(afq_low[, c("pswq_06", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_07<-as.data.frame(cor(afq_low[, c("pswq_07", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_08<-as.data.frame(cor(afq_low[, c("pswq_08", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_09<-as.data.frame(cor(afq_low[, c("pswq_09", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_10<-as.data.frame(cor(afq_low[, c("pswq_10", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_11<-as.data.frame(cor(afq_low[, c("pswq_11", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_12<-as.data.frame(cor(afq_low[, c("pswq_12", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_13<-as.data.frame(cor(afq_low[, c("pswq_13", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_14<-as.data.frame(cor(afq_low[, c("pswq_14", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_15<-as.data.frame(cor(afq_low[, c("pswq_15", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+pswq_16<-as.data.frame(cor(afq_low[, c("pswq_16", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+
+
+## Remove Item Colum
+pswq_01<-pswq_01[,-1]
+pswq_02<-pswq_02[,-1]
+pswq_03<-pswq_03[,-1]
+pswq_04<-pswq_04[,-1]
+pswq_05<-pswq_05[,-1]
+pswq_06<-pswq_06[,-1]
+pswq_07<-pswq_07[,-1]
+pswq_08<-pswq_08[,-1]
+pswq_09<-pswq_09[,-1]
+pswq_10<-pswq_10[,-1]
+pswq_11<-pswq_11[,-1]
+pswq_12<-pswq_12[,-1]
+pswq_13<-pswq_13[,-1]
+pswq_14<-pswq_14[,-1]
+pswq_15<-pswq_15[,-1]
+pswq_16<-pswq_16[,-1]
+
+
+## append all data frames into one
+
+pswq_cor_table<- dplyr::bind_rows(pswq_01,pswq_02,pswq_03,pswq_04,pswq_05,pswq_06,pswq_07,
+                                  pswq_08,pswq_09,pswq_10,pswq_11,pswq_12,pswq_13,pswq_14,
+                                  pswq_15,pswq_16)
+
+## clear total score rows
+ind <- seq(1, nrow(pswq_cor_table), by=5)
+pswq_cor_table<-pswq_cor_table[ind, ]
+
+
+## MASQ
+masq_01<-as.data.frame(cor(afq_low[, c("masq_01", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_03<-as.data.frame(cor(afq_low[, c("masq_03", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_14<-as.data.frame(cor(afq_low[, c("masq_14", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_18<-as.data.frame(cor(afq_low[, c("masq_18", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_19<-as.data.frame(cor(afq_low[, c("masq_19", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_21<-as.data.frame(cor(afq_low[, c("masq_21", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_23<-as.data.frame(cor(afq_low[, c("masq_23", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_25<-as.data.frame(cor(afq_low[, c("masq_25", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_26<-as.data.frame(cor(afq_low[, c("masq_26", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_27<-as.data.frame(cor(afq_low[, c("masq_27", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_30<-as.data.frame(cor(afq_low[, c("masq_30", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_33<-as.data.frame(cor(afq_low[, c("masq_33", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_35<-as.data.frame(cor(afq_low[, c("masq_35", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_36<-as.data.frame(cor(afq_low[, c("masq_36", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_39<-as.data.frame(cor(afq_low[, c("masq_39", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_40<-as.data.frame(cor(afq_low[, c("masq_40", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_44<-as.data.frame(cor(afq_low[, c("masq_44", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_45<-as.data.frame(cor(afq_low[, c("masq_45", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_48<-as.data.frame(cor(afq_low[, c("masq_48", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_49<-as.data.frame(cor(afq_low[, c("masq_49", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_52<-as.data.frame(cor(afq_low[, c("masq_52", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_53<-as.data.frame(cor(afq_low[, c("masq_53", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_55<-as.data.frame(cor(afq_low[, c("masq_55", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_57<-as.data.frame(cor(afq_low[, c("masq_57", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_58<-as.data.frame(cor(afq_low[, c("masq_58", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_61<-as.data.frame(cor(afq_low[, c("masq_61", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_66<-as.data.frame(cor(afq_low[, c("masq_66", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_67<-as.data.frame(cor(afq_low[, c("masq_67", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_69<-as.data.frame(cor(afq_low[, c("masq_69", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_72<-as.data.frame(cor(afq_low[, c("masq_72", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_73<-as.data.frame(cor(afq_low[, c("masq_73", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_75<-as.data.frame(cor(afq_low[, c("masq_75", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_78<-as.data.frame(cor(afq_low[, c("masq_78", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_79<-as.data.frame(cor(afq_low[, c("masq_79", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_85<-as.data.frame(cor(afq_low[, c("masq_85", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_86<-as.data.frame(cor(afq_low[, c("masq_86", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_87<-as.data.frame(cor(afq_low[, c("masq_87", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_88<-as.data.frame(cor(afq_low[, c("masq_88", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+masq_89<-as.data.frame(cor(afq_low[, c("masq_89", "afq_total", "pswq_total", "masq_aa_total", "masq_ad_total")], method = "pearson"))
+
+
+## Remove Item Colum
+
+masq_01<-masq_01[,-1]
+masq_03<-masq_03[,-1]
+masq_14<-masq_14[,-1]
+masq_18<-masq_18[,-1]
+masq_19<-masq_19[,-1]
+masq_21<-masq_21[,-1]
+masq_23<-masq_23[,-1]
+masq_25<-masq_25[,-1]
+masq_26<-masq_26[,-1]
+masq_27<-masq_27[,-1]
+masq_30<-masq_30[,-1]
+masq_33<-masq_33[,-1]
+masq_35<-masq_35[,-1]
+masq_36<-masq_36[,-1]
+masq_39<-masq_39[,-1]
+masq_40<-masq_40[,-1]
+masq_44<-masq_44[,-1]
+masq_45<-masq_45[,-1]
+masq_48<-masq_48[,-1]
+masq_49<-masq_49[,-1]
+masq_52<-masq_52[,-1]
+masq_53<-masq_53[,-1]
+masq_55<-masq_55[,-1]
+masq_57<-masq_57[,-1]
+masq_58<-masq_58[,-1]
+masq_61<-masq_61[,-1]
+masq_66<-masq_66[,-1]
+masq_67<-masq_67[,-1]
+masq_69<-masq_69[,-1]
+masq_72<-masq_72[,-1]
+masq_73<-masq_73[,-1]
+masq_75<-masq_75[,-1]
+masq_78<-masq_78[,-1]
+masq_79<-masq_79[,-1]
+masq_85<-masq_85[,-1]
+masq_86<-masq_86[,-1]
+masq_87<-masq_87[,-1]
+masq_88<-masq_88[,-1]
+masq_89<-masq_89[,-1]
+
+
+
+
+## append all data frames into one
+
+masq_cor_table<- dplyr::bind_rows(masq_01,masq_03,masq_14,masq_18,masq_19,masq_21,masq_23,masq_25,masq_26,
+                                  masq_27,masq_30,masq_33,masq_35,masq_36,masq_39,masq_40,masq_44,masq_45,
+                                  masq_48,masq_49,masq_52,masq_53,masq_55,masq_57,masq_58,masq_61,masq_66,
+                                  masq_67,masq_69,masq_72,masq_73,masq_75,masq_78,masq_79,masq_85,masq_86,
+                                  masq_87,masq_88,masq_89)
+
+## clear total score rows
+ind <- seq(1, nrow(masq_cor_table), by=5)
+masq_cor_table<-masq_cor_table[ind, ]
+
+write.csv(afq_cor_table,"high_afq_cor_table.csv", row.names = TRUE)
+write.csv(pswq_cor_table,"high_pswq_cor_table.csv", row.names = TRUE)
+write.csv(masq_cor_table,"high_masq_cor_table.csv", row.names = TRUE)
+
+
+########################################################################################
+##### Predicting Freeze using PSWQ and MASQ items - high freeze & full sample test ##### 
+########################################################################################
+
+
+#6-items .38 correlation threshold
+fullsample_trio_set6<-afq_final
+fullsample_trio_set6<-fullsample_trio_set6[,c(1:28,30,42,43,54,67,72,87)]
+fullsample_trio_set6$trio_total<-rowSums(fullsample_trio_set6[, c(29:34)])
+
+cor.test(fullsample_trio_set6$afq_total,fullsample_trio_set6$trio_total, method="pearson")
+
+
+
+#10-items
+
+fullsample_trio_set10<-afq_final
+fullsample_trio_set10<-fullsample_trio_set10[,c(1:28,30,35,42,43,54,63,67,69,72,77,87)]
+fullsample_trio_set10$trio_total<-rowSums(fullsample_trio_set10[, c(29:38)])
+
+cor.test(fullsample_trio_set10$afq_total,fullsample_trio_set10$trio_total, method="pearson")
+
+#11-items .36 correlation threshold
+fullsample_trio_set11<-afq_final
+fullsample_trio_set11<-fullsample_trio_set11[,c(1:28,30,33,35,42,43,54,63,67,69,72,77,87)]
+fullsample_trio_set11$trio_total<-rowSums(fullsample_trio_set11[, c(29:39)])
+
+cor.test(fullsample_trio_set11$afq_total,fullsample_trio_set11$trio_total, method="pearson")
+
+#13-items
+fullsample_trio_set13<-afq_final
+fullsample_trio_set13<-fullsample_trio_set13[,c(1:28,30,33,35,42,43,53,54,63,67,69,72,77,79,87)]
+fullsample_trio_set13$trio_total<-rowSums(fullsample_trio_set13[, c(29:41)])
+
+cor.test(fullsample_trio_set13$afq_total,fullsample_trio_set13$trio_total, method="pearson")
+
+#14-items .34 correlation threshold
+fullsample_trio_set14<-afq_final
+fullsample_trio_set14<-fullsample_trio_set14[,c(1:28,30,33,35,41,42,43,53,54,63,67,69,72,77,79,87)]
+fullsample_trio_set14$trio_total<-rowSums(fullsample_trio_set14[, c(29:42)])
+
+cor.test(fullsample_trio_set14$afq_total,fullsample_trio_set14$trio_total, method="pearson")
+
+#17-items
+fullsample_trio_set17<-afq_final
+fullsample_trio_set17<-fullsample_trio_set17[,c(1:28,30,32,33,35,40,41,42,43,53,54,60,63,67,69,72,77,79,87)]
+fullsample_trio_set17$trio_total<-rowSums(fullsample_trio_set17[, c(29:45)])
+
+cor.test(fullsample_trio_set17$afq_total,fullsample_trio_set17$trio_total, method="pearson")
+
+
+####################################################
+#######    Run EFA on final AFQ item set    ########
+####################################################
+
+
+## Set data to include anxious freezing symptom values ##
+efa_frzfin<-afq_final
+
+
+## Determine number of factors to extract ##
+
+## Get eigenvalues ##
+ev<-eigen(cor(efa_frzfin))
+
+## conduct parallel analysis ##
+ap<-parallel(subject = nrow(efa_frzfin), var=ncol(efa_frzfin), rep=100, cent=0.05)
+
+
+## Show analysis of factors to retain ##
+nS<-nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS)
+
+## Look for the number of components associated to the last severe slope change (i.e. what is the number of components before the slope flattens) ##
+## Remember to stay flexible ##
+
+
+## After # of factors has been decided upon, rotate your data ##
+
+## orthogonal rotation - assumes no correlation between components/factors ##
+efa.ort<-fa(efa_frzfin, nfactors = 3, rotate = "varimax")
+print(efa.ort)
+
+## Let's make this easier to read and sort by loading above .3 for each factor##
+print(efa.ort, cut=.4)
+
+
+## How about oblique rotation - assumes correlation between components/factors ##
+efa.obl.1<-fa(efa_frzfin, nfactors = 1, rotate = "oblimin")
+print(efa.obl.1)
+
+efa.obl.2<-fa(efa_frzfin, nfactors = 2, rotate = "oblimin")
+print(efa.obl.2, cut=.4, sort=T)
+
+efa.obl.3<-fa(efa_frzfin, nfactors = 3, rotate = "oblimin")
+print(efa.obl.3)
+print(efa.obl.3, cut=.4, sort = T)
+
+
+
+factor.congruence(efa.obl.2,efa.obl.3)
+
+efa.obl.4<-fa(efa_frzfin, nfactors = 4, rotate = "oblimin")
+print(efa.obl.4, cut=.4, sort = T)
+factor.congruence(efa.obl.3,efa.obl.4)
+
+efa.obl.5<-fa(efa_frzfin, nfactors = 5, rotate = "oblimin")
+print(efa.obl.5, cut=.4, sort=T)
+
+efa.obl.6<-fa(efa_frzfin, nfactors = 6, rotate = "oblimin")
+print(efa.obl.6, cut=.4, sort=T)
+
+efa.obl.7<-fa(efa_frzfin, nfactors = 7, rotate = "oblimin")
+print(efa.obl.7, cut=.6, sort=T)
+
+efa.obl.8<-fa(efa_frzfin, nfactors = 8, rotate = "oblimin")
+print(efa.obl.8, cut=.6, sort=T)
+
+
+## Let's make this easier to read and sort by loading above .3 for each factor ##
+print(efa.obl, cut=.5)
+print(efa.obl.5, cut=.5)
+
+# how similar are these solutions? Let's check with a congruence coefficient ##
+factor.congruence(efa.obl.5,efa.obl.7)
+
+
+
+psych::describe(freezing_raw_d$afqs_3)
+psych::describe(freezing_raw_d$afqs_14)
+psych::describe(freezing_raw_d$afqs_30)
+plot(freezing_raw_d$afqs_3)
+
+hist(freezing_raw_d$afqs_3)
+hist(freezing_raw_d$afqs_14)
+hist(freezing_raw_d$afqs_30)
+
+hist(freezing_raw_d$afqs_7)
