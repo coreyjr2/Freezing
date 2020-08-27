@@ -2,8 +2,9 @@
 ### Freezing Questionnaire and Spring Data Analysis ###
 #######################################################
 
+## ** NOTE IF YOU ARE NOT APPROVED UNDER THE IRB PROTOCOL 08297 FROM UNIVERSTIY OF ILLINOIS DO NOT USE THIS CODE ** ##
 
-
+## SEE R CODE ' FREEZING EFA_OPEN.R ' ##
 
 ###############################
 ## install relevant packages ##
