@@ -454,12 +454,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color = duplicat
   geom_smooth(method=lm)
 
 
-## Plot Depression scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
 ## Plot Depression scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_ad_total.x, color=age_trend)) +
   geom_point(shape=1) +
@@ -494,11 +488,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color = duplicate
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
 
-## Plot Low Positive Affect scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
 
 ## Plot Low Positive Affect scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_lpa_total, color=age_trend)) +
@@ -520,11 +509,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color = duplicated
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
 
-## Plot Depressive Mood scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
 
 ## Plot Depressive Mood scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_dm_total, color=age_trend)) +
@@ -548,12 +532,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_aa_total.x, color = duplicat
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
 
-
-## Plot Arousal scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_aa_total.x, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
 
 ## Plot Arousal by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=masq_aa_total.x, color=age_trend)) +
@@ -604,13 +582,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total, color = duplicated)) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm)
 
-## Plot Anxiety Sensitivity scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total.x, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm) +
-  labs(x= "date of completion", y= "pswq total") +
-  labs(color= "Age")
 
 ## Plot Anxiety Sensitivity scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=asi_total.x, color=age_trend)) +
@@ -678,13 +649,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=duplicated)
   geom_smooth(method=lm)
 
 
-## Plot Working Memory scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-
 ## Plot Working Memory scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_wm_total, color=age_trend)) +
   geom_point(shape=1) +
@@ -701,15 +665,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=duplicated
   geom_smooth(method=lm)
 
 ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=duplicated)) + 
-  geom_histogram(binwidth=5, fill="white", position = "dodge")
-
-## Plot Inhibit scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_inh_total, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-ggplot(freezing_raw_d_age, aes(x=brief_inh_total, color=age_new)) + 
   geom_histogram(binwidth=5, fill="white", position = "dodge")
 
 ## Plot Inhibit scores by Age Trend
@@ -732,14 +687,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=duplicate
 ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=duplicated)) + 
   geom_histogram(binwidth=5, fill="white", position = "dodge")
 
-## Plot Shift scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_new)) + 
-  geom_histogram(binwidth=5, fill="white", position = "dodge")
 
 ## Plot Shift scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_shft_total, color=age_trend)) +
@@ -762,14 +709,6 @@ ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=duplica
 ggplot(freezing_raw_d_age, aes(x=brief_emctrl_total, color=duplicated)) + 
   geom_histogram(binwidth=5, fill="white", position = "dodge")
 
-## Plot Shift scores by Age
-ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=age_new)) +
-  geom_point(shape=1) +
-  scale_colour_hue(l=50) +
-  geom_smooth(method=lm)
-
-ggplot(freezing_raw_d_age, aes(x=brief_emctrl_total, color=age_new)) + 
-  geom_histogram(binwidth=5, fill="white", position = "dodge")
 
 ## Plot Shift scores by Age Trend
 ggplot(freezing_raw_d_age, aes(x=con_date.x, y=brief_emctrl_total, color=age_trend)) +
