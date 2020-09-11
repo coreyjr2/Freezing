@@ -176,6 +176,15 @@ freezing_raw_d_age<-freezing_raw_d_age %>%
 ## Reorder Columns
 freezing_raw_d_age<-freezing_raw_d_age[,c(1:6,398,7:397)]
 
+# Create Subsections for all relevant data sets
+freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c("masq_01.x","masq_14.x","masq_18.x","masq_23.x","masq_27.x","masq_30.x","masq_35.x","masq_36.x","masq_40.x","masq_49.x",
+                                                                   "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
+freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
+
+freezing_raw_d$masq_lpa_total<- rowSums(freezing_raw_d[, c("masq_01","masq_14","masq_18","masq_23","masq_27","masq_30","masq_35","masq_36","masq_40","masq_49",
+                                                           "masq_58","masq_72","masq_78","masq_86")])
+freezing_raw_d$masq_dm_total<- rowSums(freezing_raw_d[,c("masq_44","masq_33", "masq_26", "masq_53","masq_66", "masq_21","masq_39","masq_89")])
+
 
 ## Clean Demographics before importing into freezing raw set
 Demographics<- Demographics[,c(2,9:19)]
@@ -187,6 +196,17 @@ freezing_demo<- merge(freezing_demo,Demographics,by="name")
 #reorder columns for visibility
 freezing_demo<-freezing_demo[,c(1:7, 399:409 ,8:398)]
 
+freezing_demo$masq_lpa_total<- rowSums(freezing_demo[, c("masq_01.x","masq_14.x","masq_18.x","masq_23.x","masq_27.x","masq_30.x","masq_35.x","masq_36.x","masq_40.x","masq_49.x",
+                                                                   "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
+freezing_demo$masq_dm_total<- rowSums(freezing_demo[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
+
+freezing_demo_pre_sb<-freezing_demo %>%
+  dplyr::filter(freezing_demo$record_id < 540)
+
+freezing_demopost_sb<-freezing_demo %>%
+  dplyr::filter(freezing_demo$record_id >= 540)
+
+
 #quickly assess sample sizes of various variables
 count(freezing_demo, vars="RACE")
 #should we remove small samples? 
@@ -197,6 +217,9 @@ count(freezing_demo, vars="GENDER")
 freezing_demo_twogender <- freezing_demo %>%
   dplyr::filter(record_id != 509) %>%
   dplyr::filter(record_id != 81)
+t.test(pswq_total.x ~ GENDER, data=freezing_demo_twogender, alternative = "greater", var.equal = FALSE)
+t.test(masq_aa_total.x ~ GENDER, data=freezing_demo_twogender, alternative = "less", var.equal = FALSE)
+t.test(masq_ad_total.x ~ GENDER, data=freezing_demo_twogender, alternative = "greater", var.equal = FALSE)
 
 count(freezing_demo, vars="CLASS.SELF")
 #should we compare extremes (i.e. lower vs upper class?)
@@ -211,19 +234,32 @@ count(freezing_demo, vars="ETHNICITY")
 freezing_demo_twoethn <- freezing_demo %>%
   dplyr::filter(record_id != 689)
 
+## Create upper and lower class
+freezing_demo<-freezing_demo %>%
+  mutate(college_class=case_when(
+    YEAR.COLLEGE %in% "Freshman or first-year student" ~ "lower class",
+    YEAR.COLLEGE %in% "Sophomore" ~ "lower class",
+    YEAR.COLLEGE %in% "Junior" ~ "upper class",
+    YEAR.COLLEGE %in% "Senior" ~ "upper class",
+  ))
+
 #Two way Anova Testing
-fit <- aov(pswq_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo)
+fit <- lm(pswq_total.x ~ college_class + timepoint + college_class*timepoint, data=freezing_demo)
 summary(fit)
-fit <- aov(masq_aa_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo)
+fit <- lm(masq_aa_total.x ~ RACE + GENDER*RACE, data=freezing_demo_twogender)
 summary(fit)
-fit <- aov(masq_ad_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo)
+fit <- lm(masq_ad_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo_twogender)
+summary(fit)
+fit <- aov(rrq_total.x ~ GENDER + RACE + GENDER*RACE, data=freezing_demo_twogender)
 summary(fit)
 
-fit <- aov(pswq_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo)
+fit <- aov(pswq_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo_twogender)
 summary(fit)
-fit <- aov(masq_aa_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo)
+fit <- aov(masq_aa_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo_twogender)
 summary(fit)
-fit <- aov(masq_ad_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo)
+fit <- aov(masq_ad_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo_twogender)
+summary(fit)
+fit <- aov(rrq_total.x ~ GENDER + ETHNICITY + GENDER*ETHNICITY, data=freezing_demo_twogender)
 summary(fit)
 
 fit <- aov(pswq_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freezing_demo)
@@ -232,12 +268,16 @@ fit <- aov(masq_aa_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freez
 summary(fit)
 fit <- aov(masq_ad_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freezing_demo)
 summary(fit)
+fit <- aov(rrq_total.x ~ GENDER + CLASS.SELF + GENDER*CLASS.SELF, data=freezing_demo)
+summary(fit)
 
 fit <- aov(pswq_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
 summary(fit)
 fit <- aov(masq_aa_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
 summary(fit)
 fit <- aov(masq_ad_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
+summary(fit)
+fit <- aov(rrq_total.x ~ RACE + CLASS.SELF + RACE*CLASS.SELF, data=freezing_demo)
 summary(fit)
 
 fit <- aov(pswq_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data=freezing_demo)
@@ -246,20 +286,45 @@ fit <- aov(masq_aa_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data
 summary(fit)
 fit <- aov(masq_ad_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data=freezing_demo)
 summary(fit)
+fit <- aov(rrq_total.x ~ ETHNICITY + CLASS.SELF + ETHNICITY*CLASS.SELF, data=freezing_demo)
+summary(fit)
 
 fit <- aov(pswq_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
 summary(fit)
-fit <- aov(masq_aa_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
+fit <- aov(masq_aa_total.x ~ CLASS.SELF, data=freezing_demo)
 summary(fit)
 fit <- aov(masq_ad_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
 summary(fit)
+fit <- aov(rrq_total.x ~ ETHNICITY + RACE + ETHNICITY*RACE, data=freezing_demo)
+summary(fit)
 
-#Anova
-fit4 <- aov(pswq_total.x ~ CLASS.SELF, data=freezing_demo)
+#one way Anova
+fit4 <- aov(masq_aa_total.x ~ GENDER, data=freezing_demo_twogender)
 summary(fit4)
+fit4 <- aov(masq_ad_total.x ~ GENDER, data=freezing_demo_twogender)
+summary(fit4)
+fit4 <- aov(pswq_total.x ~ GENDER, data=freezing_demo_twogender)
+summary(fit4)
+
 fit4 <- aov(masq_aa_total.x ~ CLASS.SELF, data=freezing_demo)
 summary(fit4)
-fit4 <- aov(masq_ad_total.x ~ CLASS.SELF, data=freezing_demo)
+fit4 <- aov(masq_aa_total.x ~ RACE, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(masq_aa_total.x ~ ETHNICITY, data=freezing_demo)
+summary(fit4)
+
+fit4 <- aov(masq_lpa_total ~ CLASS.SELF, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(masq_lpa_total ~ RACE, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(masq_lpa_total ~ ETHNICITY, data=freezing_demo)
+summary(fit4)
+
+fit4 <- aov(pswq_total.x ~ CLASS.SELF, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(pswq_total.x ~ RACE, data=freezing_demo)
+summary(fit4)
+fit4 <- aov(pswq_total.x ~ ETHNICITY, data=freezing_demo)
 summary(fit4)
 
 
@@ -297,12 +362,12 @@ ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=ETHNICITY)) +
   labs(x= "date of completion", y= "pswq total") +
   labs(color= "Ethnicity")
 
-ggplot(freezing_demo, aes(x=con_date.x, y=pswq_total.x, color=YEAR.COLLEGE)) +
+ggplot(freezing_raw_d_age, aes(x=con_date.x, y=pswq_total.x, color=age_trend)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm, se=F) +
   labs(x= "date of completion", y= "pswq total") +
-  labs(color= "College Year")
+  labs(color= "Age")
 
 
 
@@ -468,17 +533,6 @@ anova(fit)
 coefficients(fit)
 
 ## Let's also check for patterns in Anhedonic Depression subsections, Low Positive Affect & Depressive Mood
-
-
-## Create Subsections for all relevant data sets
-freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c("masq_01.x","masq_14.x","masq_18.x","masq_23.x","masq_27.x","masq_30.x","masq_35.x","masq_36.x","masq_40.x","masq_49.x",
-                                                                   "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
-freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
-
-freezing_raw_d$masq_lpa_total<- rowSums(freezing_raw_d[, c("masq_01","masq_14","masq_18","masq_23","masq_27","masq_30","masq_35","masq_36","masq_40","masq_49",
-                                                                   "masq_58","masq_72","masq_78","masq_86")])
-freezing_raw_d$masq_dm_total<- rowSums(freezing_raw_d[,c("masq_44","masq_33", "masq_26", "masq_53","masq_66", "masq_21","masq_39","masq_89")])
-
 
 
 ##Low Positive Affect
@@ -727,7 +781,7 @@ ggplot(freezing_raw_d_age, aes(x=brief_shft_total, color=age_trend)) +
 
 ## Create dataset to check LEC signficance
 lec<-freezing_raw_d_age %>%
-  select(,1:7,43,68,129,130,133:149,399:404)
+  select(1:7,43,68,129,130,133:149,399,400)
 
 lec<-lec %>%
   mutate(lifeevent=case_when(
@@ -755,8 +809,18 @@ lec$lifeevent<-replace_na(lec$lifeevent, replace = "No")
 
 
 t.test(pswq_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+#p < .05
 t.test(masq_aa_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+#p > .05
 t.test(masq_ad_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+#p < .05
+t.test(masq_lpa_total ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+#p > .05
+t.test(masq_dm_total ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+#p < .05
+t.test(rrq_total.x ~ lifeevent, data = lec, alternative = "less", var.equal = FALSE)
+#p < .05
+
 
 #Now check differences by experience
 lec_ND<- lec %>%
@@ -901,10 +965,22 @@ freezing_demo$atq_avoi<-rowSums(freezing_demo[, c(322,324,327,328,330,333)])
 freezing_demo_twogender$atq_appr<-rowSums(freezing_demo_twogender[, c(323,325,326,329,331,332)])
 freezing_demo_twogender$atq_avoi<-rowSums(freezing_demo_twogender[, c(322,324,327,328,330,333)])
 
-cor(freezing_raw_d_age[, c("atq_appr", "atq_avoi", "pswq_total.x", "masq_aa_total.x", "masq_ad_total.x")], method = "pearson")
+cor(freezing_raw_d_age[, c("atq_appr", "atq_avoi", "rrq_total.x", "pswq_total.x", "masq_aa_total.x", "masq_ad_total.x", "masq_lpa_total", "masq_dm_total")], method = "pearson")
 
 
-fit<-glm(pswq_total.x ~ atq_avoi + atq_appr + atq_avoi*atq_appr, data = freezing_raw_d_age)
+fit<-lm(pswq_total.x ~ atq_avoi + atq_appr + atq_avoi*atq_appr, data = freezing_raw_d_age)
+summary(fit)
+
+fit<-lm(rrq_total.x ~ atq_avoi + atq_appr + atq_avoi*atq_appr, data = freezing_raw_d_age)
+summary(fit)
+
+fit<-lm(masq_ad_total.x ~ atq_avoi + atq_appr + atq_avoi*atq_appr, data = freezing_raw_d_age)
+summary(fit)
+
+fit<-lm(masq_lpa_total ~ atq_avoi + atq_appr + atq_avoi*atq_appr, data = freezing_raw_d_age)
+summary(fit)
+
+fit<-lm(masq_dm_total ~ atq_avoi + atq_appr + atq_avoi*atq_appr, data = freezing_raw_d_age)
 summary(fit)
 
 
@@ -967,14 +1043,20 @@ post_sb<-freezing_raw_d_age %>%
 
 ## First test comparison of all participants separated by pre vs post spring break
 
-t.test(pre_sb$pswq_total.x, post_sb$pswq_total.x, alternative = "two.sided", var.equal = FALSE)
+t.test(pre_sb$pswq_total.x, post_sb$pswq_total.x, alternative = "less", var.equal = FALSE)
 ## No significant difference for general sample
 
 
 ## T test Worry scores by age trend and calendar date
 
-t.test(pswq_total.x ~ age_trend, data = pre_sb, alternative = "greater", var.equal = FALSE)
+t.test(pswq_total.x ~ age_trend, data = pre_sb, alternative = "less", var.equal = FALSE)
 t.test(pswq_total.x ~ age_trend, data = post_sb, alternative = "less", var.equal = FALSE)
+t.test(pswq_total.x ~ college_class, data = freezing_demo_pre_sb, alternative = "less", var.equal = FALSE)
+t.test(pswq_total.x ~ college_class, data = freezing_demopost_sb, alternative = "less", var.equal = TRUE)
+t.test(pswq_total.x ~ college_class, data = freezing_demo, alternative = "less", var.equal = FALSE)
+
+bp<-lm(pswq_total.x ~ age_trend + con_date.x + age_trend*con_date.x, data = freezing_raw_d_age)
+summary(bp)
 
 ## No significant difference before spring break
 ## Significant difference AFTER spring break! Tell this story!!
@@ -1009,20 +1091,29 @@ pander(thsd$`timepoint:age_trend`)
 
 ## Let's check continuous covariate btwn anxious arousal, apprehension & anhedonic depression scores
 
-lm_test_1<-glm(masq_ad_total.x ~ masq_aa_total.x + pswq_total.x + masq_aa_total.x*pswq_total.x, data = freezing_raw_d_age)
+lm_test_1<-lm(masq_aa_total.x ~ rrq_total.x + pswq_total.x + rrq_total.x*pswq_total.x, data = freezing_raw_d_age)
 plot(lm_test_1)
 summary(lm_test_1)
 
-lm_test_2<-glm(masq_aa_total.x ~ masq_ad_total.x + pswq_total.x + masq_ad_total.x*pswq_total.x, data = freezing_raw_d_age)
+lm_test_2<-lm(masq_ad_total.x ~ rrq_total.x + pswq_total.x + rrq_total.x*pswq_total.x, data = freezing_raw_d_age)
 plot(lm_test_2)
 summary(lm_test_2)
 
-lm_test_3<-glm(pswq_total.x ~ masq_ad_total.x + masq_aa_total.x + masq_ad_total.x*masq_aa_total.x, data = freezing_raw_d_age)
+lm_test_3<-lm(masq_lpa_total ~ rrq_total.x + pswq_total.x + rrq_total.x*pswq_total.x, data = freezing_raw_d_age)
 plot(lm_test_3)
 summary(lm_test_3)
-## Let's check correlation between anxious arousal, apprehension & anhedonic depression scores
 
-pairs.panels(freezing_raw_d_age[,c("masq_ad_total.x", "masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x")], 
+lm_test_4<-lm(masq_aa_total.x ~ masq_dm_total + pswq_total.x + masq_dm_total*pswq_total.x, data = freezing_raw_d_age)
+plot(lm_test_4)
+summary(lm_test_4)
+
+lm_test_4<-lm(rrq_total.x ~ pswq_total.x, data = freezing_raw_d_age)
+summary(lm_test_4)
+
+
+## Let's check correlation between anxious arousal, apprehension, rumination & anhedonic depression scores
+
+pairs.panels(freezing_raw_d_age[,c("masq_ad_total.x", "masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x", "rrq_total.x")], 
              method = "pearson", # correlation method
              hist.col = "#00AFBB",
              density = TRUE,  # show density plots
