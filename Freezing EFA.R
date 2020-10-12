@@ -10,44 +10,44 @@
 ## install relevant packages ##
 ###############################
 install.packages("tidyverse")
-y
-library(tidyverse)
+install.packages("PostHocTest")
 install.packages("psych")
-library(psych)
 install.packages("ggplot2")
-library(ggplot2)
 install.packages("corrplot")
-library(corrplot)
 install.packages("GPArotation")
-library(GPArotation)
 install.packages("qdap")
-library(qdap)
 install.packages("nFactors")
-library(nFactors)
 install.packages("lavaan")
-library(lavaan)
 install.packages("ggthemes")
-library(ggthemes)
 install.packages("ggpubr")
-library(ggpubr)
 install.packages("janitor")
-library(janitor)
 install.packages("lubridate")
-library(lubridate)
 install.packages("psy")
+install.packages("rgl")
+install.packages("pander")
+
+library(tidyverse)
+library(psych)
+library(ggplot2)
+library(corrplot)
+library(GPArotation)
+library(qdap)
+library(nFactors)
+library(lavaan)
+library(ggthemes)
+library(ggpubr)
+library(janitor)
+library(lubridate)
 library(psy)
 library(plyr)
 library(dplyr)
 library(tidyr)
-install.packages("rgl")
 library(car)
-install.packages("PostHocTest")
 library(tidyverse)
 library(ggpubr)
 library(rstatix)
 library(broom)
 library(datarium)
-install.packages("pander")
 library(pander)
 
 ##Import data **be sure to order by name before importing so the order of participants matches the Age file
@@ -175,12 +175,12 @@ freezing_raw_d_age<-freezing_raw_d_age[,c(1:5,397,6:396)]
 
 freezing_raw_d_age<-freezing_raw_d_age %>%
   mutate(age_trend=case_when(
-    age %in% 18 ~ "<=20",
-    age %in% 19 ~ "<=20",
-    age %in% 20 ~ "<=20",
-    age %in% 21 ~ ">20",
-    age %in% 22 ~ ">20",
-    age %in% 23:27 ~ ">20"
+    age %in% 18 ~ "<20",
+    age %in% 19 ~ "<20",
+    age %in% 20 ~ "≥20",
+    age %in% 21 ~ "≥20",
+    age %in% 22 ~ "≥20",
+    age %in% 23:27 ~ "≥20"
   ))
 
 freezing_raw_d_age<-freezing_raw_d_age %>%
@@ -261,7 +261,13 @@ freezing_demo<-freezing_demo %>%
     YEAR.COLLEGE %in% "Junior" ~ "upper class",
     YEAR.COLLEGE %in% "Senior" ~ "upper class",
   ))
+freezing_demo_upper<-freezing_demo %>%
+  filter(college_class == "upper class")
+freezing_demo_lower<-freezing_demo %>%
+  filter(college_class == "lower class")
 
+describe(freezing_demo_lower$age)
+describe(freezing_demo_upper$age)
 
 #############################################
 ##      MANOVA - Demographics              ##
@@ -271,7 +277,7 @@ freezing_demo<-freezing_demo %>%
 # Gender Identity
 #################
 
-A <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ GENDER, freezing_demo_twogender)
+A <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ GENDER*timepoint, freezing_demo_twogender)
 Manova(A, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There was a statistically significant difference between the 
@@ -290,11 +296,11 @@ grouped.data %>% anova_test(value ~ GENDER)
 
 # Now, we need to check pairwise comparisons
 
-pwc <- freezing_demo_twogender %>%
+pwcg <- freezing_demo_twogender %>%
   gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable) %>%
   games_howell_test(value ~ GENDER)
-pwc
+pwcg
 
 #Report these results in the following manner: "Pairwise comparisons between groups confirmed the significant difference between groups such that cisgender females
 # had higher pswq scores
@@ -304,7 +310,7 @@ pwc
 # Ethnicity
 #################
 
-B <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ ETHNICITY, freezing_demo_twoethn)
+B <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ ETHNICITY*timepoint, freezing_demo_twoethn)
 Manova(B, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between ethnicity endorsement
@@ -316,7 +322,7 @@ Manova(B, test.statistic = "Pillai")
 # College Class
 #################
 
-C <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ YEAR.COLLEGE, freezing_demo)
+C <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ YEAR.COLLEGE*timepoint, freezing_demo)
 Manova(C, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between college year
@@ -327,7 +333,9 @@ Manova(C, test.statistic = "Pillai")
 # RACE
 #################
 
-D <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ RACE, freezing_demo_race)
+count(freezing_demo$GENDER)
+
+D <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ RACE*timepoint, freezing_demo_race)
 Manova(D, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between college year
@@ -336,8 +344,9 @@ Manova(D, test.statistic = "Pillai")
 #################
 # SES
 #################
+count(freezing_demo$CLASS.SELF)
 
-E <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ CLASS.SELF, freezing_demo_class)
+E <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ CLASS.SELF*timepoint, freezing_demo_class)
 Manova(E, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between socioeconomic statuses
@@ -347,9 +356,9 @@ Manova(E, test.statistic = "Pillai")
 # SEX ORIENTATION
 #################
 
-count(freezing_demo, vars=SEX.ORIENTATION)
+count(freezing_demo$SEX.ORIENTATION)
 
-G <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ SEX.ORIENTATION, freezing_demo)
+G <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ SEX.ORIENTATION*timepoint, freezing_demo)
 Manova(G, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between socioeconomic statuses
@@ -361,16 +370,16 @@ Manova(G, test.statistic = "Pillai")
 
 count(freezing_demo, vars=INTERNATIONAL)
 
-H <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ INTERNATIONAL, freezing_demo)
+H <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ INTERNATIONAL*timepoint, freezing_demo)
 Manova(H, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between INTERNATIONAL status
 # on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
 
 
-#############################################
-##      MANOVA - By Group (T1 & T2)        ##
-#############################################
+##############################################################
+##  MANOVA - By Group (T1 & T2)  & Age Trend (<20, ≥ 20)    ##
+##############################################################
 
 ## Group is either pre-spring break (T1) or post-spring break (T2)
 
@@ -417,12 +426,13 @@ freezing_raw_d_age %>%
 
 # Computation
 
-Y1 <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint, freezing_raw_d_age)
+Y1 <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age_trend, freezing_raw_d_age)
 Manova(Y1, test.statistic = "Pillai")
 
+count(freezing_raw_d_age, vars=age)
 
 # Report these results in the following manner: "There was a statistically significant difference between the 
-#timepoints on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .142, F(4,648) = 26.89, p< 0.0001
+#timepoints on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .142, F(4,646) = 26.89, p< 0.0001
 
 # A significant Manova can be followed by univariate one-way ANOVA to examine each dependent variable
 
@@ -445,66 +455,6 @@ pwc
 
 #Report these results in the following manner: "Pairwise comparisons between groups confirmed the significant difference between groups such that T2 had higher scores
 #for masq-dm and masq-lpa 
-
-
-
-#############################################
-##      MANOVA - By Age_trend              ##
-#############################################
-
-#Important note, our hypothesis is to test differences in scores as a function of age AFTER spring break - therefore we utilize the post spring break dataset and the age trend
-# column to teset our hypotheses. Age trend was delineated to parallel traditional ages in various grades (i.e. +20 likely to = juniors or seniors)
-
-#Checking Assumptions
-#Let's check for levels of multicollinearity
-Z <- cbind(post_sb$pswq_total.x, post_sb$masq_aa_total.x,post_sb$masq_ad_total.x, post_sb$masq_dm_total, post_sb$masq_lpa_total)
-cor(Z, method = c("pearson"))
-
-# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem yet again, adjust.
-# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
-
-box_res2<-box_m(post_sb[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],post_sb[,"age_trend"])
-
-# The assumption that of equality of covariance matrices is met
-# Test for homogeneity of variance
-
-leveneTest(post_sb[,"pswq_total.x"],post_sb[,"age_trend"], location = "median", correction = "zero.connection")
-leveneTest(post_sb[,"masq_aa_total.x"],post_sb[,"age_trend"], location = "median", correction = "zero.connection")
-leveneTest(post_sb[,"masq_dm_total"],post_sb[,"age_trend"], location = "median", correction = "zero.connection")
-leveneTest(post_sb[,"masq_lpa_total"],post_sb[,"age_trend"], location = "median", correction = "zero.connection")
-
-# The assumption that of equality of variance is met
-# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
-
-post_sb %>%
-  group_by(age_trend) %>%
-  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  arrange(variable)
-
-# look at qq plots
-ggqqplot(post_sb, "pswq_total.x", facet.by = "age_trend",
-         ylab = "worry", ggtheme = theme_bw())
-ggqqplot(post_sb, "masq_aa_total.x", facet.by = "age_trend",
-         ylab = "arousal", ggtheme = theme_bw())
-ggqqplot(post_sb, "masq_dm_total", facet.by = "age_trend",
-         ylab = "depressed mood", ggtheme = theme_bw())
-ggqqplot(post_sb, "masq_lpa_total", facet.by = "age_trend",
-         ylab = "low positive affect", ggtheme = theme_bw())
-
-# Now, check multivariate normality
-post_sb %>%
-  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  mshapiro_test()
-
-# Computation
-
-Z1 <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ age_trend, freezing_raw_d_age)
-Manova(Z1, test.statistic = "Pillai")
-
-
-# Report these results in the following manner: "There exists no significant difference between the 
-# age groups on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .04, F(4,161) = 1.56, p = .188
-
 
 
 ####################
@@ -540,13 +490,17 @@ lec$lifeevent<-replace_na(lec$lifeevent, replace = "no")
 count(lec, vars = lifeevent)
 
 
-L <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ lifeevent, lec)
+L <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ lifeevent*timepoint, lec)
 Manova(L, test.statistic = "Pillai")
 
 # Report these results in the following manner: "There exists no significant difference between those 
 # who endorsed a previous life event and those who did not on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
 
-
+pwclife <- lec %>%
+  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable) %>%
+  games_howell_test(value ~ lifeevent)
+pwclife
 
 
 
@@ -562,7 +516,7 @@ pairs.panels(freezing_raw_d_age[,c("masq_lpa_total", "masq_dm_total", "pswq_tota
 ## Given that some of our data is not normally distributed, let's try spearman
 
 pairs.panels(freezing_raw_d_age[,c("masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x", "rrq_total.x")], 
-             method = "spearman", # correlation method
+             method = "pearson", # correlation method
              hist.col = "#00AFBB",
              density = TRUE,  # show density plots
              ellipses = TRUE # show correlation ellipses
@@ -573,27 +527,39 @@ pairs.panels(freezing_raw_d_age[,c("masq_lpa_total", "masq_dm_total", "pswq_tota
 
 lm_test_1<-lm(masq_aa_total.x ~ rrq_total.x + pswq_total.x, data = freezing_raw_d_age)
 summary(lm_test_1)
+
+install.packages ("lm.beta")
+library(lm.beta)
+
+lm.beta(lm_test_1)
+
 # There is a predictive effect of rumination and worry on anxious arousal, however, the adjusted r-squared is quite small .06 -> so only 6% of change in our variable could be predicted by rum/worry
 
 lm_test_2<-lm(masq_dm_total ~ rrq_total.x + pswq_total.x, data = freezing_raw_d_age)
 summary(lm_test_2)
+lm.beta(lm_test_2)
 
 # There is a predictive effect of rumination and worry on depressed mood, with an adjusted r-squared = .14, still low but both have an effect
 
 lm_test_3<-lm(masq_lpa_total ~ rrq_total.x + pswq_total.x, data = freezing_raw_d_age)
 summary(lm_test_3)
-
+lm.beta(lm_test_3)
 # There is a predictive effect of only worry on low positive affect, with an adjusted r-squared = .10
 
 
 lm_test_4<-lm(rrq_total.x ~ pswq_total.x, data = freezing_raw_d_age)
 summary(lm_test_4)
+lm.beta(lm_test_4)
 
-lm_test_4<-lm(pswq_total.x ~ rrq_total.x, data = freezing_raw_d_age)
-summary(lm_test_4)
+lm_test_5<-lm(pswq_total.x ~ rrq_total.x, data = freezing_raw_d_age)
+summary(lm_test_5)
+
+cc
 
 # significant predictive reciprocated relationship between worry and rumination, r-squared .26 
 
+
+cor(freezing_raw_d_age[, c("rrq_total.x", "pswq_total.x", "masq_aa_total.x", "masq_lpa_total", "masq_dm_total")], method = "pearson")
 
 ########
 # ATQ  #
@@ -610,23 +576,27 @@ cor(freezing_raw_d_age[, c("atq_appr", "atq_avoi", "rrq_total.x", "pswq_total.x"
 
 fit1<-lm(pswq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
 summary(fit1)
+lm.beta(fit1)
 # significant predictive relationship of avoidance on worry, r-squared .52 
 
 
 fit2<-lm(rrq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
 summary(fit2)
-
+lm.beta(fit2)
 # significant predictive relationship of both avoidance and approach on rumination, r-squared .29 
 
-
-fit3<-lm(masq_lpa_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+fit3<-lm(masq_aa_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
 summary(fit3)
+lm.beta(fit3)
 
+fit4<-lm(masq_lpa_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+summary(fit4)
+lm.beta(fit4)
 # significant predictive relationship of both avoidance and approach on rumination, r-squared .27 - but! higher approach predicts lower lpa, while higher avoi predicts higher lpa
 
-fit4<-lm(masq_dm_total ~ atq_avoi + atq_appr,  data = freezing_raw_d_age)
-summary(fit4)
-
+fit5<-lm(masq_dm_total ~ atq_avoi + atq_appr,  data = freezing_raw_d_age)
+summary(fit5)
+lm.beta(fit5)
 
 # significant predictive relationship of both avoidance and approach on rumination, r-squared .22 - but! higher approach predicts lower dm, while higher avoi predicts higher dm
 
@@ -5192,3 +5162,21 @@ hist(freezing_raw_d$afqs_14)
 hist(freezing_raw_d$afqs_30)
 
 hist(freezing_raw_d$afqs_7)
+
+
+efa.frz.3<-fa(efa_frzfin, nfactors = 3, rotate = "oblimin")
+print(efa.frz.3, cut=.4, sort = T)
+
+frz.cfa<-'
+S  =~ afqs_62 + afqs_64 + afqs_65 + afqs_66 + afqs_67 + afqs_68 + afqs_69 + afqs_70
+C =~ afqs_1 + afqs_2 + afqs_6 + afqs_8 + afqs_9 + afqs_10 + afqs_16 + afqs_18
+P  =~ afqs_7 + afqs_22 + afqs_36 + afqs_37 + afqs_41 + afqs_42 + afqs_43 + afqs_51
+'
+
+
+
+#Lets fit this model and check on how it performed
+
+frz.cfa.fit<-cfa(frz.cfa, data = efa_frzfin, missing = 'fiml')
+summary(frz.cfa.fit, fit.measures = T, standardized = T)
+write.csv(efa_frzfin, "EFA_Freeze_HW2.csv")
