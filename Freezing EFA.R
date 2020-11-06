@@ -25,6 +25,9 @@ install.packages("lubridate")
 install.packages("psy")
 install.packages("rgl")
 install.packages("pander")
+install.packages("ggcorrplot")
+install.packages("rockchalk")
+install.packages("lmSupport")
 
 library(tidyverse)
 library(psych)
@@ -49,6 +52,9 @@ library(rstatix)
 library(broom)
 library(datarium)
 library(pander)
+library(ggcorrplot)
+library(rockchalk)
+library(lmSupport)
 
 ##Import data **be sure to order by name before importing so the order of participants matches the Age file
 freezing_raw<-read.csv(file.choose())
@@ -273,9 +279,182 @@ describe(freezing_demo_upper$age)
 ##      MANOVA - Demographics              ##
 #############################################
 
+#Checking Assumptions for freezing_demo dataframe
+#Let's check for levels of multicollinearity
+YD <- cbind(freezing_demo$pswq_total.x, freezing_demo$masq_aa_total.x,freezing_demo$masq_ad_total.x, freezing_demo$masq_dm_total, freezing_demo$masq_lpa_total)
+cor(YD, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_d<-box_m(freezing_demo[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo[,"pswq_total.x"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo[,"masq_aa_total.x"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo[,"masq_dm_total"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo[,"masq_lpa_total"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################################################
+#Checking Assumptions for freezing_demo_twogender dataframe
+#Let's check for levels of multicollinearity
+YDG <- cbind(freezing_demo_twogender$pswq_total.x, freezing_demo_twogender$masq_aa_total.x,freezing_demo_twogender$masq_ad_total.x, freezing_demo_twogender$masq_dm_total, freezing_demo_twogender$masq_lpa_total)
+cor(YDG, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_dg<-box_m(freezing_demo_twogender[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_twogender[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo_twogender[,"pswq_total.x"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twogender[,"masq_aa_total.x"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twogender[,"masq_dm_total"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twogender[,"masq_lpa_total"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo_twogender %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo_twogender, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twogender, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twogender, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twogender, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo_twogender %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################################################
+#Checking Assumptions for freezing_demo_twoethn dataframe
+#Let's check for levels of multicollinearity
+YDE <- cbind(freezing_demo_twoethn$pswq_total.x, freezing_demo_twoethn$masq_aa_total.x,freezing_demo_twoethn$masq_ad_total.x, freezing_demo_twoethn$masq_dm_total, freezing_demo_twoethn$masq_lpa_total)
+cor(YDE, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_de<-box_m(freezing_demo_twoethn[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_twoethn[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo_twoethn[,"pswq_total.x"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twoethn[,"masq_aa_total.x"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twoethn[,"masq_dm_total"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twoethn[,"masq_lpa_total"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo_twoethn %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo_twoethn, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twoethn, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twoethn, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twoethn, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo_twoethn %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################################################
+#Checking Assumptions for freezing_demo_race dataframe
+#Let's check for levels of multicollinearity
+YDR <- cbind(freezing_demo_race$pswq_total.x, freezing_demo_race$masq_aa_total.x,freezing_demo_race$masq_ad_total.x, freezing_demo_race$masq_dm_total, freezing_demo_race$masq_lpa_total)
+cor(YDR, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_dr<-box_m(freezing_demo_race[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_race[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo_race[,"pswq_total.x"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_race[,"masq_aa_total.x"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_race[,"masq_dm_total"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_race[,"masq_lpa_total"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo_race %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo_race, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo_race, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo_race, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo_race, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo_race %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
 #################
 # Gender Identity
 #################
+
+count(freezing_demo_twogender, c("GENDER", "timepoint"))
 
 A <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ GENDER*timepoint, freezing_demo_twogender)
 Manova(A, test.statistic = "Pillai")
@@ -310,6 +489,9 @@ pwcg
 # Ethnicity
 #################
 
+count(freezing_demo_twoethn, c("ETHNICITY", "timepoint"))
+
+
 B <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ ETHNICITY*timepoint, freezing_demo_twoethn)
 Manova(B, test.statistic = "Pillai")
 
@@ -333,7 +515,8 @@ Manova(C, test.statistic = "Pillai")
 # RACE
 #################
 
-count(freezing_demo$GENDER)
+count(freezing_demo_race, c("RACE", "timepoint"))
+summary(freezing_demo_race)
 
 D <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ RACE*timepoint, freezing_demo_race)
 Manova(D, test.statistic = "Pillai")
@@ -344,7 +527,7 @@ Manova(D, test.statistic = "Pillai")
 #################
 # SES
 #################
-count(freezing_demo$CLASS.SELF)
+count(freezing_demo_class, c("CLASS.SELF", "timepoint"))
 
 E <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ CLASS.SELF*timepoint, freezing_demo_class)
 Manova(E, test.statistic = "Pillai")
@@ -382,6 +565,8 @@ Manova(H, test.statistic = "Pillai")
 ##############################################################
 
 ## Group is either pre-spring break (T1) or post-spring break (T2)
+
+count(freezing_raw_d_age,c("timepoint", "age_trend"))
 
 #Checking Assumptions
 #Let's check for levels of multicollinearity
@@ -427,7 +612,8 @@ freezing_raw_d_age %>%
 # Computation
 
 Y1 <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age_trend, freezing_raw_d_age)
-Manova(Y1, test.statistic = "Pillai")
+age_man<-Manova(Y1, test.statistic = "Pillai")
+age_man
 
 count(freezing_raw_d_age, vars=age)
 
@@ -457,9 +643,35 @@ pwc
 #for masq-dm and masq-lpa 
 
 
+## Computation 2
+
+Y2<- lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age_trend, freezing_raw_d_age)
+age2_man<-Manova(Y2, test.statistic = "Pillai")
+age2_man
+
+
+grouped.data <- freezing_raw_d_age %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable)
+
+grouped.data %>% anova_test(value ~ age_trend*timepoint)
+
+
+pwc <- freezing_raw_d_age %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable) %>%
+  games_howell_test(value ~ timepoint)
+pwc
+
+
+t.test(pswq_total.x ~ age_trend, data = post_sb, alternative = "less", var.equal = FALSE)
+t.test(pswq_total.x ~ age_trend, data = pre_sb, alternative = "less", var.equal = FALSE)
+
 ####################
 ##  MANOVA - LEC  ##
 ####################
+
+count(lec,c("timepoint", "lifeevent"))
 
 ## Create dataset to check LEC signficance
 lec<-freezing_raw_d_age %>%
@@ -487,20 +699,38 @@ lec<-lec %>%
   ))
 
 lec$lifeevent<-replace_na(lec$lifeevent, replace = "no")
-count(lec, vars = lifeevent)
+count(lec$lifeevent)
 
 
 L <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ lifeevent*timepoint, lec)
-Manova(L, test.statistic = "Pillai")
+lec_man<-Manova(L, test.statistic = "Pillai")
+lec_man
+
+capture.output(lec_man,file="lec_man.doc")
 
 # Report these results in the following manner: "There exists no significant difference between those 
 # who endorsed a previous life event and those who did not on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
 
+L2 <- lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ lifeevent*timepoint, lec)
+lec2_man<-Manova(L2, test.statistic = "Pillai")
+lec2_man
+
+capture.output(lec2_man,file="lec2_man.doc")
+
+grouped.data1 <- lec %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable)
+
+grouped.data1 %>% anova_test(value ~ lifeevent*timepoint)
+
+
 pwclife <- lec %>%
-  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable) %>%
   games_howell_test(value ~ lifeevent)
 pwclife
+
+
 
 
 
@@ -532,18 +762,19 @@ install.packages ("lm.beta")
 library(lm.beta)
 
 lm.beta(lm_test_1)
-
+getDeltaRsquare(lm_test_1)
 # There is a predictive effect of rumination and worry on anxious arousal, however, the adjusted r-squared is quite small .06 -> so only 6% of change in our variable could be predicted by rum/worry
 
-lm_test_2<-lm(masq_dm_total ~ rrq_total.x + pswq_total.x, data = freezing_raw_d_age)
+lm_test_2<-lm(masq_dm_total ~ pswq_total.x + rrq_total.x, data = freezing_raw_d_age)
 summary(lm_test_2)
 lm.beta(lm_test_2)
-
+getDeltaRsquare(lm_test_2)
 # There is a predictive effect of rumination and worry on depressed mood, with an adjusted r-squared = .14, still low but both have an effect
 
 lm_test_3<-lm(masq_lpa_total ~ rrq_total.x + pswq_total.x, data = freezing_raw_d_age)
 summary(lm_test_3)
 lm.beta(lm_test_3)
+getDeltaRsquare(lm_test_3)
 # There is a predictive effect of only worry on low positive affect, with an adjusted r-squared = .10
 
 
@@ -568,40 +799,100 @@ freezing_raw_d_age$atq_appr<-rowSums(freezing_raw_d_age[, c(312,314,315,318,320,
 freezing_raw_d_age$atq_avoi<-rowSums(freezing_raw_d_age[, c(311,313,316,317,319,322)])
 
 psych::describe(freezing_raw_d_age$atq_appr)
-psych::describe(freezing_raw_d_age$atq_avoi)  
+psych::describe(freezing_raw_d_age$atq_avoi)
+
+quantile(freezing_raw_d_age$atq_appr)
+quantile(freezing_raw_d_age$atq_avoi)
+
+freezing_raw_d_age<-freezing_raw_d_age %>%
+  mutate(temperament=case_when(
+    atq_avoi %in% 28:42 & atq_appr %in% 6:31 ~ "high avoi",
+    atq_appr %in% 32:42 & atq_avoi %in% 6:27 ~ "high appr",
+    atq_avoi %in% 28:42 & atq_appr %in% 32:42 ~ "high dual",
+    atq_avoi %in% 6:27 & atq_appr %in% 6:31 ~ "low dual"
+  ))
+
+count(freezing_raw_d_age$temperament)
+
+temp_group<- lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*temperament, freezing_raw_d_age)
+temp_man<-Manova(temp_group, test.statistic = "Pillai")
+temp_man
+
+gd3 <- freezing_raw_d_age %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable)
+
+gd3 %>% anova_test(value ~ temperament*timepoint)
 
 
-cor(freezing_raw_d_age[, c("atq_appr", "atq_avoi", "rrq_total.x", "pswq_total.x", "masq_aa_total.x", "masq_lpa_total", "masq_dm_total")], method = "pearson")
-
-
-fit1<-lm(pswq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
-summary(fit1)
-lm.beta(fit1)
-# significant predictive relationship of avoidance on worry, r-squared .52 
-
-
-fit2<-lm(rrq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
-summary(fit2)
-lm.beta(fit2)
-# significant predictive relationship of both avoidance and approach on rumination, r-squared .29 
-
-fit3<-lm(masq_aa_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
-summary(fit3)
-lm.beta(fit3)
-
-fit4<-lm(masq_lpa_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
-summary(fit4)
-lm.beta(fit4)
-# significant predictive relationship of both avoidance and approach on rumination, r-squared .27 - but! higher approach predicts lower lpa, while higher avoi predicts higher lpa
-
-fit5<-lm(masq_dm_total ~ atq_avoi + atq_appr,  data = freezing_raw_d_age)
-summary(fit5)
-lm.beta(fit5)
-
-# significant predictive relationship of both avoidance and approach on rumination, r-squared .22 - but! higher approach predicts lower dm, while higher avoi predicts higher dm
+pwctemp <- freezing_raw_d_age %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable) %>%
+  games_howell_test(value ~ temperament)
+pwctemp
 
 
 
+count(freezing_raw_d_age)
+cor1<-cor(freezing_raw_d_age[, c("atq_appr", "atq_avoi", "rrq_total.x", "pswq_total.x", "masq_aa_total.x", "masq_lpa_total", "masq_dm_total")], method = "pearson")
+ggcorrplot(cor1, hc.order = TRUE, type = "lower",
+           lab = TRUE)
+
+pairs.panels(freezing_raw_d_age[,c("atq_appr", "atq_avoi", "rrq_total.x", "pswq_total.x", "masq_aa_total.x", "masq_lpa_total", "masq_dm_total")], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+)
+
+mlm1<-lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+summary(mlm1)
+
+
+head(resid(mlm1))
+head(fitted(mlm1))
+coef(mlm1)
+vcov(mlm1)
+
+
+x1<-lm(pswq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+getDeltaRsquare(x1)
+x2<-lm(rrq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+getDeltaRsquare(x2)
+x3<-lm(masq_lpa_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+getDeltaRsquare(x3)
+x4<-lm(masq_dm_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+getDeltaRsquare(x4)
+x5<-lm(masq_aa_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+getDeltaRsquare(x5)
+
+
+mlm2<-lm(cbind(masq_aa_total.x, masq_lpa_total, masq_dm_total) ~ pswq_total.x + rrq_total.x, data = freezing_raw_d_age)
+summary(mlm2)
+
+lm.deltaR2(mlm1)
+head(resid(mlm1))
+head(fitted(mlm1))
+coef(mlm2)
+vcov(mlm1)
+
+worry<-freezing_raw_d_age[,c(27:42)]
+cronbach(worry)
+
+rumination<-freezing_raw_d_age[,c(44:67)]
+cronbach(rumination)
+
+test<-lm(pswq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+summary(test)
+lm.beta(test)
+
+Anova(mlm1)
+
+grouped.data.mlm <- freezing_raw_d_age %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable)
+
+grouped.data.mlm %>% anova_test(value ~ atq_avoi*atq_appr)
 
 ##############################################################################
 # Tests that follow are exploratory and unrelated to Pandemic Trends Paper   #
@@ -5180,3 +5471,23 @@ P  =~ afqs_7 + afqs_22 + afqs_36 + afqs_37 + afqs_41 + afqs_42 + afqs_43 + afqs_
 frz.cfa.fit<-cfa(frz.cfa, data = efa_frzfin, missing = 'fiml')
 summary(frz.cfa.fit, fit.measures = T, standardized = T)
 write.csv(efa_frzfin, "EFA_Freeze_HW2.csv")
+
+
+
+
+
+
+##############################################
+##    Blow up Latent Variable Theory Study  ## 
+##############################################
+
+# Step 1: Assess correlations between totals across questionnaires in our Spring 2020 data
+
+
+pairs.panels(freezing_raw_d_age[,c("masq_ad_total.x", "pswq_total.x", "masq_aa_total.x",
+                                   "rrq_total.x", "atq_appr", "atq_avoi", "panas_pos_total.x", 
+                                   "panas_neg_total.x", "asi_total.x", "sias_total.x", "brief_wm_total", 
+                                   "brief_inh_total", "brief_shft_total","brief_emctrl_total")], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB"
+)
