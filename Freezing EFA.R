@@ -28,6 +28,9 @@ install.packages("pander")
 install.packages("ggcorrplot")
 install.packages("rockchalk")
 install.packages("lmSupport")
+install.packages("jmv")
+install.packages("formattable")
+
 
 library(tidyverse)
 library(psych)
@@ -55,6 +58,9 @@ library(pander)
 library(ggcorrplot)
 library(rockchalk)
 library(lmSupport)
+library(jmv)
+library(formattable)
+
 
 ##Import data **be sure to order by name before importing so the order of participants matches the Age file
 freezing_raw<-read.csv(file.choose())
@@ -66,7 +72,13 @@ Age_1053<-read.csv(file.choose())
 ## Import Demographics of Participants
 
 Demographics<-read.csv(file.choose())
+count(Demographics$GENDER)
+count(Demographics$SEX.ORIENTATION)
+count(Demographics$RACE)
+count(Demographics$ETHNICITY)
+count(Demographics$CLASS.SELF)
 
+count(lec$age)
 ######################################
 ## data cleaning - removing columns ##
 ######################################
@@ -200,364 +212,10 @@ freezing_raw_d_age$masq_lpa_total<- rowSums(freezing_raw_d_age[, c("masq_01.x","
                                                                    "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
 freezing_raw_d_age$masq_dm_total<- rowSums(freezing_raw_d_age[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
 
-freezing_raw_d$masq_lpa_total<- rowSums(freezing_raw_d[, c("masq_01","masq_14","masq_18","masq_23","masq_27","masq_30","masq_35","masq_36","masq_40","masq_49",
-                                                           "masq_58","masq_72","masq_78","masq_86")])
-freezing_raw_d$masq_dm_total<- rowSums(freezing_raw_d[,c("masq_44","masq_33", "masq_26", "masq_53","masq_66", "masq_21","masq_39","masq_89")])
-
-
-
-## Create pre-spring break & post-spring break groups for discrete testing later
-pre_sb<-freezing_raw_d_age %>%
-  dplyr::filter(freezing_raw_d_age$record_id < 540)
-
-post_sb<-freezing_raw_d_age %>%
-  dplyr::filter(freezing_raw_d_age$record_id >= 540)
-
-## Clean Demographics before importing into freezing raw set
-Demographics<- Demographics[,c(2,9:19)]
-
-freezing_demo<-freezing_raw_d_age
-names(freezing_demo)[names(freezing_demo) == "name.x"] <- "name"
-freezing_demo<- merge(freezing_demo,Demographics,by="name")
-
-#reorder columns for visibility
-freezing_demo$masq_lpa_total<- rowSums(freezing_demo[, c("masq_01.x","masq_14.x","masq_18.x","masq_23.x","masq_27.x","masq_30.x","masq_35.x","masq_36.x","masq_40.x","masq_49.x",
-                                                                   "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
-freezing_demo$masq_dm_total<- rowSums(freezing_demo[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
-
-freezing_demo_pre_sb<-freezing_demo %>%
-  dplyr::filter(freezing_demo$record_id < 540)
-
-freezing_demopost_sb<-freezing_demo %>%
-  dplyr::filter(freezing_demo$record_id >= 540)
-
-
-#quickly assess sample sizes of various variables
-count(freezing_demo, vars=RACE)
-#should we remove small samples?
-freezing_demo_race <- freezing_demo %>%
-  dplyr::filter(RACE != "Native Hawaiian or Other Pacific Islander") 
-
-count(freezing_demo, vars="GENDER")
-#should we remove small samples? 
-#if yes..then
-freezing_demo_twogender <- freezing_demo %>%
-  dplyr::filter(record_id != 509) %>%
-  dplyr::filter(record_id != 81)
-
-
-count(freezing_demo, vars=CLASS.SELF)
-#should we compare extremes (i.e. lower vs upper class?)
-#if yes..then
-freezing_demo_class <- freezing_demo %>%
-  dplyr::filter(CLASS.SELF != "[Decline to Answer]")
-
-
-count(freezing_demo, vars=ETHNICITY)
-#should we remove small samples? 
-#if yes..then
-freezing_demo_twoethn <- freezing_demo %>%
-  dplyr::filter(record_id != 689)
-
-## Create upper and lower class
-freezing_demo<-freezing_demo %>%
-  mutate(college_class=case_when(
-    YEAR.COLLEGE %in% "Freshman or first-year student" ~ "lower class",
-    YEAR.COLLEGE %in% "Sophomore" ~ "lower class",
-    YEAR.COLLEGE %in% "Junior" ~ "upper class",
-    YEAR.COLLEGE %in% "Senior" ~ "upper class",
-  ))
-freezing_demo_upper<-freezing_demo %>%
-  filter(college_class == "upper class")
-freezing_demo_lower<-freezing_demo %>%
-  filter(college_class == "lower class")
-
-describe(freezing_demo_lower$age)
-describe(freezing_demo_upper$age)
-
-#############################################
-##      MANOVA - Demographics              ##
-#############################################
-
-#Checking Assumptions for freezing_demo dataframe
-#Let's check for levels of multicollinearity
-YD <- cbind(freezing_demo$pswq_total.x, freezing_demo$masq_aa_total.x,freezing_demo$masq_ad_total.x, freezing_demo$masq_dm_total, freezing_demo$masq_lpa_total)
-cor(YD, method = c("pearson"))
-
-# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
-# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
-
-box_res_d<-box_m(freezing_demo[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo[,"timepoint"])
-
-# The assumption that of equality of covariance matrices is met
-# Test for homogeneity of variance
-
-leveneTest(freezing_demo[,"pswq_total.x"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo[,"masq_aa_total.x"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo[,"masq_dm_total"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo[,"masq_lpa_total"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
-
-# The assumption that of equality of variance is met
-# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
-
-freezing_demo %>%
-  group_by(timepoint) %>%
-  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  arrange(variable)
-
-# look at qq plots
-ggqqplot(freezing_demo, "pswq_total.x", facet.by = "timepoint",
-         ylab = "worry", ggtheme = theme_bw())
-ggqqplot(freezing_demo, "masq_aa_total.x", facet.by = "timepoint",
-         ylab = "arousal", ggtheme = theme_bw())
-ggqqplot(freezing_demo, "masq_dm_total", facet.by = "timepoint",
-         ylab = "depressed mood", ggtheme = theme_bw())
-ggqqplot(freezing_demo, "masq_lpa_total", facet.by = "timepoint",
-         ylab = "low positive affect", ggtheme = theme_bw())
-
-# Now, check multivariate normality
-freezing_demo %>%
-  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  mshapiro_test()
-
-
-#################################################
-#Checking Assumptions for freezing_demo_twogender dataframe
-#Let's check for levels of multicollinearity
-YDG <- cbind(freezing_demo_twogender$pswq_total.x, freezing_demo_twogender$masq_aa_total.x,freezing_demo_twogender$masq_ad_total.x, freezing_demo_twogender$masq_dm_total, freezing_demo_twogender$masq_lpa_total)
-cor(YDG, method = c("pearson"))
-
-# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
-# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
-
-box_res_dg<-box_m(freezing_demo_twogender[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_twogender[,"timepoint"])
-
-# The assumption that of equality of covariance matrices is met
-# Test for homogeneity of variance
-
-leveneTest(freezing_demo_twogender[,"pswq_total.x"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_twogender[,"masq_aa_total.x"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_twogender[,"masq_dm_total"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_twogender[,"masq_lpa_total"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
-
-# The assumption that of equality of variance is met
-# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
-
-freezing_demo_twogender %>%
-  group_by(timepoint) %>%
-  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  arrange(variable)
-
-# look at qq plots
-ggqqplot(freezing_demo_twogender, "pswq_total.x", facet.by = "timepoint",
-         ylab = "worry", ggtheme = theme_bw())
-ggqqplot(freezing_demo_twogender, "masq_aa_total.x", facet.by = "timepoint",
-         ylab = "arousal", ggtheme = theme_bw())
-ggqqplot(freezing_demo_twogender, "masq_dm_total", facet.by = "timepoint",
-         ylab = "depressed mood", ggtheme = theme_bw())
-ggqqplot(freezing_demo_twogender, "masq_lpa_total", facet.by = "timepoint",
-         ylab = "low positive affect", ggtheme = theme_bw())
-
-# Now, check multivariate normality
-freezing_demo_twogender %>%
-  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  mshapiro_test()
-
-
-#################################################
-#Checking Assumptions for freezing_demo_twoethn dataframe
-#Let's check for levels of multicollinearity
-YDE <- cbind(freezing_demo_twoethn$pswq_total.x, freezing_demo_twoethn$masq_aa_total.x,freezing_demo_twoethn$masq_ad_total.x, freezing_demo_twoethn$masq_dm_total, freezing_demo_twoethn$masq_lpa_total)
-cor(YDE, method = c("pearson"))
-
-# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
-# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
-
-box_res_de<-box_m(freezing_demo_twoethn[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_twoethn[,"timepoint"])
-
-# The assumption that of equality of covariance matrices is met
-# Test for homogeneity of variance
-
-leveneTest(freezing_demo_twoethn[,"pswq_total.x"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_twoethn[,"masq_aa_total.x"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_twoethn[,"masq_dm_total"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_twoethn[,"masq_lpa_total"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
-
-# The assumption that of equality of variance is met
-# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
-
-freezing_demo_twoethn %>%
-  group_by(timepoint) %>%
-  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  arrange(variable)
-
-# look at qq plots
-ggqqplot(freezing_demo_twoethn, "pswq_total.x", facet.by = "timepoint",
-         ylab = "worry", ggtheme = theme_bw())
-ggqqplot(freezing_demo_twoethn, "masq_aa_total.x", facet.by = "timepoint",
-         ylab = "arousal", ggtheme = theme_bw())
-ggqqplot(freezing_demo_twoethn, "masq_dm_total", facet.by = "timepoint",
-         ylab = "depressed mood", ggtheme = theme_bw())
-ggqqplot(freezing_demo_twoethn, "masq_lpa_total", facet.by = "timepoint",
-         ylab = "low positive affect", ggtheme = theme_bw())
-
-# Now, check multivariate normality
-freezing_demo_twoethn %>%
-  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  mshapiro_test()
-
-
-#################################################
-#Checking Assumptions for freezing_demo_race dataframe
-#Let's check for levels of multicollinearity
-YDR <- cbind(freezing_demo_race$pswq_total.x, freezing_demo_race$masq_aa_total.x,freezing_demo_race$masq_ad_total.x, freezing_demo_race$masq_dm_total, freezing_demo_race$masq_lpa_total)
-cor(YDR, method = c("pearson"))
-
-# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
-# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
-
-box_res_dr<-box_m(freezing_demo_race[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_race[,"timepoint"])
-
-# The assumption that of equality of covariance matrices is met
-# Test for homogeneity of variance
-
-leveneTest(freezing_demo_race[,"pswq_total.x"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_race[,"masq_aa_total.x"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_race[,"masq_dm_total"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
-leveneTest(freezing_demo_race[,"masq_lpa_total"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
-
-# The assumption that of equality of variance is met
-# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
-
-freezing_demo_race %>%
-  group_by(timepoint) %>%
-  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  arrange(variable)
-
-# look at qq plots
-ggqqplot(freezing_demo_race, "pswq_total.x", facet.by = "timepoint",
-         ylab = "worry", ggtheme = theme_bw())
-ggqqplot(freezing_demo_race, "masq_aa_total.x", facet.by = "timepoint",
-         ylab = "arousal", ggtheme = theme_bw())
-ggqqplot(freezing_demo_race, "masq_dm_total", facet.by = "timepoint",
-         ylab = "depressed mood", ggtheme = theme_bw())
-ggqqplot(freezing_demo_race, "masq_lpa_total", facet.by = "timepoint",
-         ylab = "low positive affect", ggtheme = theme_bw())
-
-# Now, check multivariate normality
-freezing_demo_race %>%
-  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
-  mshapiro_test()
-
-
-#################
-# Gender Identity
-#################
-
-count(freezing_demo_twogender, c("GENDER", "timepoint"))
-
-A <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ GENDER*timepoint, freezing_demo_twogender)
-Manova(A, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There was a statistically significant difference between the 
-# binary gender identities on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .123, F(4,182) = 6.37, p< 0.0001
-
-# A significant Manova can be followed by univariate one-way ANOVA to examine each dependent variable
-
-grouped.data <- freezing_demo_twogender %>%
-  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
-  group_by(variable)
-
-grouped.data %>% anova_test(value ~ GENDER)
-
-## Report these results in the following manner: "Follow-up univariate ANOVAs, using a Bonferroni adjusted alpha level of 0.0125, showed that there was a 
-#statistically significant difference in PSWQ (F(1,185)= 19, p < .00001) between binary gender identity
-
-# Now, we need to check pairwise comparisons
-
-pwcg <- freezing_demo_twogender %>%
-  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
-  group_by(variable) %>%
-  games_howell_test(value ~ GENDER)
-pwcg
-
-#Report these results in the following manner: "Pairwise comparisons between groups confirmed the significant difference between groups such that cisgender females
-# had higher pswq scores
-
-
-#################
-# Ethnicity
-#################
-
-count(freezing_demo_twoethn, c("ETHNICITY", "timepoint"))
-
-
-B <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ ETHNICITY*timepoint, freezing_demo_twoethn)
-Manova(B, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There exists no significant difference between ethnicity endorsement
-# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .03, F(4,183) = 1.24, p = .295
-
-
-
-#################
-# College Class
-#################
-
-C <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ YEAR.COLLEGE*timepoint, freezing_demo)
-Manova(C, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There exists no significant difference between college year
-# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
-
-
-#################
-# RACE
-#################
-
-count(freezing_demo_race, c("RACE", "timepoint"))
-summary(freezing_demo_race)
-
-D <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ RACE*timepoint, freezing_demo_race)
-Manova(D, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There exists no significant difference between college year
-# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
-
-#################
-# SES
-#################
-count(freezing_demo_class, c("CLASS.SELF", "timepoint"))
-
-E <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ CLASS.SELF*timepoint, freezing_demo_class)
-Manova(E, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There exists no significant difference between socioeconomic statuses
-# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
-
-#################
-# SEX ORIENTATION
-#################
-
-count(freezing_demo$SEX.ORIENTATION)
-
-G <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ SEX.ORIENTATION*timepoint, freezing_demo)
-Manova(G, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There exists no significant difference between socioeconomic statuses
-# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
-
-#################
-# INTERNATIONAL
-#################
-
-count(freezing_demo, vars=INTERNATIONAL)
-
-H <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ INTERNATIONAL*timepoint, freezing_demo)
-Manova(H, test.statistic = "Pillai")
-
-# Report these results in the following manner: "There exists no significant difference between INTERNATIONAL status
-# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
+freezing_raw_d_age$rrq_rum_total<- rowSums(freezing_raw_d_age[, c("rrq_01.x","rrq_02.x","rrq_03.x","rrq_04.x","rrq_05.x","rrq_06.x","rrq_07.x","rrq_08.x","rrq_09.x",
+                                                                  "rrq_10.x","rrq_11.x","rrq_12.x")])
+freezing_raw_d_age$rrq_refl_total<- rowSums(freezing_raw_d_age[,c("rrq_13.x","rrq_14.x", "rrq_15.x", "rrq_16.x","rrq_17.x", "rrq_18.x","rrq_19.x","rrq_20.x","rrq_21.x"
+                                                                  ,"rrq_22.x","rrq_23.x","rrq_24.x")])
 
 
 ##############################################################
@@ -609,56 +267,25 @@ freezing_raw_d_age %>%
   select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
   mshapiro_test()
 
-# Computation
-
-Y1 <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age_trend, freezing_raw_d_age)
-age_man<-Manova(Y1, test.statistic = "Pillai")
-age_man
-
-count(freezing_raw_d_age, vars=age)
-
-# Report these results in the following manner: "There was a statistically significant difference between the 
-#timepoints on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .142, F(4,646) = 26.89, p< 0.0001
-
-# A significant Manova can be followed by univariate one-way ANOVA to examine each dependent variable
-
-grouped.data <- freezing_raw_d_age %>%
-  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
-  group_by(variable)
-
-grouped.data %>% anova_test(value ~ timepoint)
-
-## Report these results in the following manner: "Follow-up univariate ANOVAs, using a Bonferroni adjusted alpha level of 0.0125, showed that there was a 
-#statistically significant difference in MASQ-DM (F(1,651)= 67.2, p < .00001) and MASQ-LPA (F(1,651) = 23.1, p<.00001) between T1 and T2 groups
-
-# Now, we need to check pairwise comparisons
-
-pwc <- freezing_raw_d_age %>%
-  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
-  group_by(variable) %>%
-  games_howell_test(value ~ timepoint)
-pwc
-
-#Report these results in the following manner: "Pairwise comparisons between groups confirmed the significant difference between groups such that T2 had higher scores
-#for masq-dm and masq-lpa 
 
 
-## Computation 2
 
-Y2<- lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age_trend, freezing_raw_d_age)
+## Computation 1
+
+Y2<- lm(cbind(pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age, freezing_raw_d_age)
 age2_man<-Manova(Y2, test.statistic = "Pillai")
 age2_man
 
 
 grouped.data <- freezing_raw_d_age %>%
-  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable)
 
-grouped.data %>% anova_test(value ~ age_trend*timepoint)
-
+gd<-grouped.data %>% anova_test(value ~ age_trend*timepoint)
+formattable(gd)
 
 pwc <- freezing_raw_d_age %>%
-  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable) %>%
   games_howell_test(value ~ timepoint)
 pwc
@@ -667,15 +294,41 @@ pwc
 t.test(pswq_total.x ~ age_trend, data = post_sb, alternative = "less", var.equal = FALSE)
 t.test(pswq_total.x ~ age_trend, data = pre_sb, alternative = "less", var.equal = FALSE)
 
-####################
-##  MANOVA - LEC  ##
-####################
+
+## MANCOVA to speak to 2nd derivative, rate of rate of change between groups having controlled for anxiety
+
+mancova(data = freezing_raw_d_age,  
+        deps = vars(masq_lpa_total, masq_dm_total),
+        factors = vars(timepoint, age_trend),
+        covs = vars(pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x),
+        multivar = list("pillai", "wilks", "hotel", "roy"),
+        boxM = FALSE,
+        shapiro = FALSE,
+        qqPlot = TRUE
+)
+
+# Great, timepoint remains significant after we control for anxiety measures. Now, let's take a look at unique variance of each depression subscale
+
+res.aov <- freezing_raw_d_age %>% 
+  anova_test(masq_dm_total ~ cbind(masq_lpa_total, pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x) + timepoint*age_trend)
+get_anova_table(res.aov)
+
+
+res.aov2 <- freezing_raw_d_age %>% 
+  anova_test(masq_lpa_total ~ cbind(masq_dm_total, pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x) + timepoint*age_trend)
+get_anova_table(res.aov2)
+
+
+
+############################################################
+##      MANOVA - Omnibus - Age, Time, Lifeevent, ATQ      ##
+############################################################
 
 count(lec,c("timepoint", "lifeevent"))
 
 ## Create dataset to check LEC signficance
 lec<-freezing_raw_d_age %>%
-  select(1:7,43,68,129,130,133:149,399,400)
+  select(1:7,43,68,129,130,133:149,399:404)
 
 lec<-lec %>%
   mutate(lifeevent=case_when(
@@ -701,39 +354,1083 @@ lec<-lec %>%
 lec$lifeevent<-replace_na(lec$lifeevent, replace = "no")
 count(lec$lifeevent)
 
+####### MANOVA Omnibus computation ####### 
 
-L <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ lifeevent*timepoint, lec)
-lec_man<-Manova(L, test.statistic = "Pillai")
-lec_man
+# separating contributions of avoidance and approach by running two separate omnibus tests with the inclusion of either avoidance or approach in the model 
 
-capture.output(lec_man,file="lec_man.doc")
+L1 <- lm(cbind(pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_dm_total, masq_lpa_total) 
+         ~ (lifeevent*timepoint*atq_appr*age), lec)
+lec1_man<-Manova(L1, test.statistic = "Pillai")
+lec1_man
 
-# Report these results in the following manner: "There exists no significant difference between those 
-# who endorsed a previous life event and those who did not on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
 
-L2 <- lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ lifeevent*timepoint, lec)
+
+L2 <- lm(cbind(pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_dm_total, masq_lpa_total) 
+         ~ (lifeevent*timepoint*atq_avoi*age), lec)
 lec2_man<-Manova(L2, test.statistic = "Pillai")
 lec2_man
 
-capture.output(lec2_man,file="lec2_man.doc")
+
+
+## Shifting followup tests - make sure to input variables of interest where applicable
 
 grouped.data1 <- lec %>%
-  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable)
+grouped.data1
 
-grouped.data1 %>% anova_test(value ~ lifeevent*timepoint)
-
+gd2<-grouped.data1 %>% anova_test(value ~ lifeevent*atq_appr)
+gd2
 
 pwclife <- lec %>%
-  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable) %>%
   games_howell_test(value ~ lifeevent)
 pwclife
 
+### Visualize results from followup univariate tests on significant omnibus MANOVA results
+
+## MASQ_AA
+
+ggplot(lec, aes(x=atq_appr, y=masq_aa_total.x, color=lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Approach", y= "Arousal") +
+  labs(color= "Life Event")
+
+ggplot(lec, aes(x=atq_avoi, y=masq_aa_total.x, color=lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Avoidance", y= "Arousal") +
+  labs(color= "Life Event")
+
+## MASQ_DM
+
+ggplot(lec, aes(x=atq_appr, y=masq_dm_total, color=lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Approach", y= "Depressed Mood") +
+  labs(color= "Life Event")
+
+ggplot(lec, aes(x=atq_appr, y=masq_dm_total, color=timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Approach", y= "Depressed Mood") +
+  labs(color= "Timepoint")
+
+## RRQ_Reflection
+
+ggplot(lec, aes(x=atq_avoi, y=rrq_refl_total, color=lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Avoidance", y= "Reflection") +
+  labs(color= "Life Event")
+
+ggplot(lec, aes(x=atq_avoi, y=rrq_refl_total, color=timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Avoidance", y= "Reflection") +
+  labs(color= "Timepoint")
+
+########################################################
+####### Hierarchical Multi Regression Analysis #######
+########################################################
+
+# Check for multicollinearity between IVs
+
+# Assess Correlation between IVs
+IV <- cbind(lec$age, lec$atq_appr,lec$atq_avoi)
+cor(IV, method = c("pearson"))
 
 
 
 
+# separate DVs for this process
+
+
+## Worry
+
+# Build models - note: build each regression for each DV
+
+# The order of this hierarchical regression is theoretically-based to attend to chronological effects and prioritized main effect analysis
+#0 ~ 1 --> total SS
+#1 ~ --> age
+#2 ~ --> timepoint
+#3 ~  --> interaction timepoint * age 
+#4 ~  --> life event
+#5 ~  --> timepoint * life event
+#6 ~ --> avoidance
+#7 ~  --> timepoint * avoidance
+#8 ~ --> approach
+#9 ~ timepoint * approach
+#10 ~ lifeevent and approach (lower-order constituent step)
+#11 ~ timepoint, lifeevent, and approach
+
+#Set Reference levels
+
+levels(lec$timepoint)
+lec$timepoint <- relevel(lec$timepoint,"pre-spring break")
+
+# Now, let's implement, start with PSWQ
+w00 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+          + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec) # to obtain total R-squared to report to reader
+w0 <- lm(pswq_total.x ~ 1, data=lec)  # to obtain Total SS
+w1 <- lm(pswq_total.x ~ age, data=lec)  # effect of age 
+w2 <- lm(pswq_total.x ~ timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+w3 <- lm(pswq_total.x ~ timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+w4 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+w5 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+w6 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+w7 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+w8 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+w9 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+           atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+w10 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+            atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+w11 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+            atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+# Total variance
+summary(w00)
+
+# model comparison for PSWQ
+anova(w0,w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w00)  
+#Res.   Df    RSS Df Sum of Sq        F    Pr(>F)    
+#0     652 187471                                    
+#1     651 187354  1       118   0.8537  0.356393     #deltaR = 118/187471 = 0.0006294307
+#2     650 187347  1         6   0.0446  0.832988     #deltaR = 6/187471 = 3.200495e-05
+#3     649 186238  1      1109   8.0481  0.004746 **  #deltaR = 1109/187471 = 0.005915582
+#4     648 185441  1       797   5.7852  0.016566 *   #deltaR = 797/187471 = 0.004251324
+#5     647 185176  1       265   1.9254  0.166228     #deltaR = 265/187471 = 0.001413552
+#6     646  89294  1     95882 695.6976 < 2.2e-16 *** #deltaR = 95882/187471 = 0.5114498
+#7     645  89293  1         1   0.0040  0.949353     #deltaR = 1/187471 = 5.334158e-06
+#8     644  88711  1       582   4.2197  0.040587 *   #deltaR = 582/187471 = 0.00310448
+#9     643  88711  1         0   0.0006  0.980754     #deltaR = 0/187471 = 0.0
+#10    642  88645  1        66   0.4790  0.489600     #deltaR = 66/187471 = 0.0003520545
+#11    641  88543  1       102   0.7404  0.390398     #deltaR = 102/187471 = 0.0005440842
+#12    621  85587 20      2956   1.0725  0.374381     #deltaR = 2956/187471 = 0.01576777
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+
+#### obtain coefficients and R-squared values between models
+
+summary(w1)
+lm.beta (w1)
+# coef:  0.3595, Multiple R-squared:  0.0006276, F-statistic: 0.4088 on 1 and 651 DF,  p-value: 0.5228, ∆R = 0.0006276
+summary(w2)
+lm.beta (w2)
+# coef:  -0.230, Multiple R-squared:  0.0006604, F-statistic: 0.2148 on 2 and 650 DF,  p-value: 0.8068, ∆R = 0.0006604 - 0.0006276 = 3.28e-05
+summary(w3)
+lm.beta (w3)
+# coef:  -2.581, Multiple R-squared:  0.006577, F-statistic: 1.432 on 3 and 649 DF,  p-value: 0.2322, ∆R = 0.006577 - 0.0006604 =  0.0059166
+summary(w4)
+lm.beta (w4)
+# coef:  2.543, Multiple R-squared:  0.01083, F-statistic: 1.774 on 4 and 648 DF,  p-value: 0.1324, ∆R = 0.01083 - 0.006577 = 0.004253
+summary(w5)
+lm.beta(w5)
+coef.lm.beta(lmw5)
+# coef:  -3.370, Multiple R-squared: 0.01225, F-statistic: 1.604 on 5 and 647 DF,  p-value: 0.1568, ∆R = 0.01225 - 0.01083 = 0.00142
+summary(w6)
+lm.beta(w6)
+# coef:  1.62167, Multiple R-squared: 0.5237, F-statistic: 118.4 on 6 and 646 DF,  p-value: < 2.2e-16, ∆R = 0.5237 - 0.01225 = 0.51145
+summary(w7)
+lm.beta(w7)
+# coef:  -0.009091, Multiple R-squared:  0.5237, F-statistic: 101.3 on 7 and 645 DF,  p-value: < 2.2e-16, ∆R = 0.5237 - 0.5237 = 0.00
+summary(w8)
+lm.beta(w8)
+# coef:   -0.16268, Multiple R-squared:  0.5268, F-statistic: 89.62 on 8 and 644 DF,  p-value: < 2.2e-16, ∆R = 0.5268 - 0.5237 = 0.0031
+summary(w9)
+lm.beta(w9)
+# coef:   -0.004406, Multiple R-squared:  0.5268, F-statistic: 79.54 on 9 and 643 DF,  p-value: < 2.2e-16, ∆R = 0.5268 - 0.5268 = 0.00
+summary(w10)
+lm.beta(w10)
+# coef:   -0.13167, Multiple R-squared:  0.5272, F-statistic: 71.57 on 10 and 642 DF,  p-value: < 2.2e-16, ∆R = 0.5272 - 0.5268 = 0.0004
+summary(w11)
+lm.beta(w11)
+# coef:   -0.39507, Multiple R-squared:  0.5277, F-statistic: 65.11 on 11 and 641 DF,  p-value: < 2.2e-16, ∆R = 0.5277 - 0.5272 = 0.0005
+
+# Visualize
+ggplot(lec, aes(x=age, y=pswq_total.x, color=timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Age", y= "Worry") +
+  labs(color= "Timepoint")
+
+ggplot(lec, aes(x=atq_avoi, y=pswq_total.x)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=atq_appr, y=pswq_total.x)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=pswq_total.x, color=lifeevent)) + 
+  geom_histogram(binwidth=5, fill="white", position = "dodge")
+
+ggplot(lec, aes(x=age, y=pswq_total.x, color = lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+# "Control" for other DVs
+wph0 <- lm(pswq_total.x ~ 1, data=lec)  # to obtain Total SS
+wph1 <- lm(pswq_total.x ~ rrq_rum_total, data=lec)  # account for shared variance between rumination and worry
+wph3 <- lm(pswq_total.x ~ rrq_rum_total + age, data=lec)  # effect of age 
+wph4 <- lm(pswq_total.x ~ rrq_rum_total + timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+wph5 <- lm(pswq_total.x ~ rrq_rum_total + timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+wph6 <- lm(pswq_total.x ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+wph7 <- lm(pswq_total.x ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+wph8 <- lm(pswq_total.x ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+wph9 <- lm(pswq_total.x ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+wph10 <- lm(pswq_total.x ~ rrq_rum_total  + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+
+# post hoc model comparison for PSWQ
+anova(wph0,wph1, wph2, wph3, wph4, wph5, wph6, wph7, wph8, wph9, wph10)  
+# Just controlling for Rumination
+#Res.Df    RSS Df Sum of Sq        F  Pr(>F)    
+#1     652 187471                                  
+#2     651 108858  1     78614 650.7940 < 2e-16 ***
+#3     650 108846  1        12   0.0953 0.75770    
+#4     649 108845  1         1   0.0098 0.92122    
+#5     648 108801  1        44   0.3636 0.54674    
+#6     647 108783  1        18   0.1496 0.69902    
+#7     646 108412  1       371   3.0693 0.08026 .  
+#8     645  78044  1     30368 251.3975 < 2e-16 ***
+#9     644  78042  1         2   0.0167 0.89716    
+#10    643  77672  1       370   3.0650 0.08047 .  
+#---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# controlling for Rumination & Depressed Mood
+#Res.Df    RSS Df Sum of Sq        F    Pr(>F)    
+#1     652 187471                                    
+#2     651 108858  1     78614 650.3793 < 2.2e-16 ***
+#3     650 106609  1      2249  18.6067  1.86e-05 ***
+#4     649 106592  1        17   0.1385   0.70989    
+#5     648 106353  1       239   1.9803   0.15984    
+#6     647 106308  1        44   0.3652   0.54586    
+#7     646 106272  1        37   0.3039   0.58164    
+#8     645 105913  1       359   2.9711   0.08524 .  
+#9     644  77870  1     28043 232.0021 < 2.2e-16 ***
+#10    643  77865  1         4   0.0356   0.85035    
+#11    642  77601  1       265   2.1890   0.13949    
+#---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+## Rumination
+
+# Build models
+rm00 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+           + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+           + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+           + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+           + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+           + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec) # to obtain total R-squared to report to reader
+rm0 <- lm(rrq_rum_total ~ 1, data=lec)  # to obtain Total SS
+rm1 <- lm(rrq_rum_total ~ age, data=lec)  # effect of age 
+rm2 <- lm(rrq_rum_total ~ timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+rm3 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+rm4 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+rm5 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+rm6 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+rm7 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+rm8 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+rm9 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+            atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+rm10 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+rm11 <- lm(rrq_rum_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+# Total variance
+summary(rm00)
+
+# model comparison for Rumination
+anova(rm0,rm1, rm2, rm3, rm4, rm5, rm6, rm7, rm8, rm9, rm10, rm11, rm00)  
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#0     652 46126                                    
+#1     651 46094  1      32.6   0.7631 0.3800414    # deltaR = 32.6/46126 = 0.0007067597
+#2     650 46093  1       1.1   0.0266 0.8697495    # deltaR = 1.1/46126 = 2.384772e-05
+#3     649 45674  1     418.8   9.7974 0.0017229 ** # deltaR = 418.8/46126 = 0.009079478
+#4     648 45052  1     621.4  14.5373  0.0001385 ***# deltaR = 621.4/46126 = 0.01347179
+#5     647 45047  1       5.2   0.1208 0.7268203    # deltaR = 5.2/46126 = 0.0001127347
+#6     646 27265  1   17781.9  415.978 < 2.2e-16 ***# deltaR = 17781.9/46126 = 0.3855071
+#7     645 27254  1      11.4   0.2664 0.6039181    # deltaR = 11.4/46126 = .0002471491
+#8     644 27196  1      58.0   1.3576 0.2417636    # deltaR = 58.0/46126 = 0.001257425
+#9     643 27138  1      57.4   1.3417 0.2445419    # deltaR = 57.4/46126 = 0.001244417
+#10    642 27131  1       7.8   0.1820 0.6680650    # deltaR = 7.8/46126 = 0.000169102
+#11    641 27098  1      32.6   0.7627 0.3801590    # deltaR = 32.6/46126 = 0.0007067597
+#12    621 26546 20     552.0   0.6456 0.8788835    # deltaR = 552/46126 = 0.01196722
+#---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+#### obtain coefficients and R-squared values between models
+summary(rm1)
+lm.beta(rm1)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm2)
+lm.beta(rm2)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm3)
+lm.beta(rm3)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm4)
+lm.beta(rm4)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm5)
+lm.beta(rm5)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm6)
+lm.beta(rm6)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm7)
+lm.beta(rm7)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm8)
+lm.beta(rm8)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm9)
+lm.beta(rm9)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm10)
+lm.beta(rm10)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rm11)
+lm.beta(rm11)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+
+# Visualize
+ggplot(lec, aes(x=age, y=rrq_rum_total, color=timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Age", y= "Rumination") +
+  labs(color= "Timepoint")
+
+ggplot(lec, aes(x=atq_avoi, y=rrq_rum_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=age, y=rrq_rum_total, color = lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=rrq_rum_total, color=lifeevent)) + 
+  geom_histogram(binwidth=5, fill= "white", position = "dodge")
+
+# "Control" for other DVs
+rmph0 <- lm(rrq_rum_total ~ 1, data=lec)  # to obtain Total SS
+rmph1 <- lm(rrq_rum_total ~ pswq_total.x, data=lec)  # account for shared variance between rumination and worry
+rmph2 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total, data=lec)  # account for shared variance between rumination and depressed mood
+rmph3 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total + age, data=lec)  # effect of age 
+rmph4 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total + timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+rmph5 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total + timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+rmph6 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total + timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+rmph7 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+rmph8 <- lm(rrq_rum_total ~ pswq_total.x + masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+
+# post hoc model comparison for Rum after PSWQ
+anova(rmph0,rmph1, rmph2, rmph3, rmph4,rmph5, rmph6,rmph7, rmph8)  
+# Just controlling for PSWQ
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#1    652 46126                                    
+#2    651 26784  1   19342.5 523.5298 < 2.2e-16 ***
+#3    650 26779  1       5.0   0.1343  0.714086    
+#4    649 26779  1       0.1   0.0020  0.964517    
+#5    648 26683  1      96.1   2.5998  0.107367    
+#6    647 26429  1     254.3   6.8821  0.008912 ** 
+#7    646 26373  1      55.4   1.4983  0.221384    
+#8    645 23830  1    2542.8  68.8250 6.288e-16 ***
+#  ---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# controlling for PSWQ & DM
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#1    652 46126                                    
+#2    651 26784  1   19342.5 539.9947 < 2.2e-16 ***
+#3    650 25415  1    1368.7  38.2102 1.128e-09 ***
+#4    649 25408  1       7.3   0.2043   0.65145    
+#5    648 25253  1     154.9   4.3248   0.03796 *  
+#6    647 25165  1      87.8   2.4521   0.11786    
+#7    646 24980  1     185.3   5.1727   0.02327 *  
+#8    645 24932  1      48.0   1.3401   0.24744    
+#9    644 23068  1    1863.9  52.0366 1.536e-12 ***
+#  ---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+## Reflection
+
+# Build models
+rf00 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+           + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+           + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+           + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+           + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+           + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec) # to obtain total R-squared to report to reader
+rf0 <- lm(rrq_refl_total ~ 1, data=lec)  # to obtain Total SS
+rf1 <- lm(rrq_refl_total ~ age, data=lec)  # effect of age 
+rf2 <- lm(rrq_refl_total ~ timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+rf3 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+rf4 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+rf5 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+rf6 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+rf7 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+rf8 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+rf9 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+            atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+rf10 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+rf11 <- lm(rrq_refl_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+# Total variance
+summary(rf00)
+
+# model comparison for Reflection
+anova(rf0,rf1, rf2, rf3, rf4, rf5, rf6, rf7, rf8, rf9, rf10, rf11, rf00)  
+#Res.Df   RSS Df Sum of Sq       F    Pr(>F)    
+#0     652 48740                                   
+#1     651 48729  1     11.02  0.1598  0.691381    # deltaR = 11.02/48740 = 0.0002260977
+#2     650 48719  1     10.49  0.1521  0.698562    # deltaR = 10.49/48740 = 0.0002152236
+#3     649 48708  1     10.76  0.1561  0.694800    # deltaR = 10.76/48740 = 0.0002207632
+#4     648 48498  1    209.41  3.0370  0.083858 .  # deltaR = 209.41/48740 = 0.004296471
+#5     647 48277  1    221.75  3.2160  0.075272 .  # deltaR = 221.75/48740 = 0.004549651
+#6     646 47644  1    632.57  9.1740  0.002722 ** # deltaR = 632.57/48740 = 0.01297846
+#7     645 46882  1    762.17 11.0535  0.001009 ** # deltaR = 762.17/48740 = 0.01563746
+#8     644 44946  1   1936.27 28.0813 1.917e-07 ***# deltaR = 1936.27/48740 = 0.03972651
+#9     643 44946  1      0.03  0.0004  0.984374     # deltaR = 0.03/48740 = 6.155109e-07
+#10    642 44937  1      8.74  0.1268  0.723665    # deltaR = 8.74/48740 = 0.0001793188
+#11    641 44777  1    160.03  2.3209  0.130625    # deltaR = 160.03/48740 = 0.00328334
+#12    621 42820 20   1957.37  1.4194 0.1057310    # deltaR = 1957.37/48740 = 0.04015942
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+#### obtain coefficients and R-squared values between models
+summary(rf1)
+lm.beta(rf1)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf2)
+lm.beta(rf2)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf3)
+
+lm.beta(rf3)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf4)
+lm.beta(rf4)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf5)
+lm.beta(rf5)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf6)
+lm.beta(rf6)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf7)
+lm.beta(rf7)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf8)
+lm.beta(rf8)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf9)
+lm.beta(rf9)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf10)
+lm.beta(rf10)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(rf11)
+lm.beta(rf11)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+
+# Visualize
+
+ggplot(lec, aes(x=atq_avoi, y=rrq_refl_total, color=timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Avoidance", y= "Reflection") +
+  labs(color= "Timepoint")
+
+ggplot(lec, aes(x=atq_avoi, y=rrq_refl_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+
+ggplot(lec, aes(x=atq_appr, y=rrq_refl_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+# Control for other DVs
+rfph0 <- lm(rrq_refl_total ~ 1, data=lec)  # to obtain Total SS
+rfph1 <- lm(rrq_refl_total ~ rrq_rum_total, data=lec)  # rumination
+rfph1 <- lm(rrq_refl_total ~ rrq_rum_total + age, data=lec)  # effect of age 
+rfph2 <- lm(rrq_refl_total ~ rrq_rum_total + timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+rfph3 <- lm(rrq_refl_total ~ rrq_rum_total + timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+rfph4 <- lm(rrq_refl_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+rfph5 <- lm(rrq_refl_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+rfph6 <- lm(rrq_refl_total ~ rrq_rum_total +  timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+rfph7 <- lm(rrq_refl_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+rfph8 <- lm(rrq_refl_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+
+
+## Anxious Arousal
+
+# Build models
+aa00 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+           + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+           + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+           + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+           + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+           + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec) # to obtain total R-squared to report to reader
+aa0 <- lm(masq_aa_total.x ~ 1, data=lec)  # to obtain Total SS
+aa1 <- lm(masq_aa_total.x ~ age, data=lec)  # effect of age 
+aa2 <- lm(masq_aa_total.x ~ timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+aa3 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+aa4 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+aa5 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+aa6 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+aa7 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+aa8 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+aa9 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+            atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+aa10 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+aa11 <- lm(masq_aa_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+#Total variance explained by all IVs
+summary(aa00)
+
+# model comparison for anxious arousal
+anova(aa0,aa1, aa2, aa3, aa4, aa5, aa6, aa7, aa8, aa9, aa10, aa11, aa00)  
+#Res.Df   RSS Df Sum of Sq       F   Pr(>F)    
+#0     652 65308                                  
+#1     651 65033  1     275.4  3.2120  0.07383 .  # deltaR = 275.4/65308 = 0.004216941
+#2     650 65032  1       0.1  0.0007  0.97862    # deltaR = 0.1/65308 =  1.531206e-06
+#3     649 65001  1      31.1  0.3625  0.54770    # deltaR = 31.1/65308 = 0.0004762051
+#4     648 65001  1       0.4  0.0048  0.94511    # deltaR = 0.4/65308 = 6.124824e-06
+#5     647 64803  1     198.2  2.3113  0.12927    # deltaR = 198.2/65308 = 0.00303485
+#6     646 59662  1    5140.7 59.9610 3.98e-14 ***# deltaR = 5140.7/65308 = 0.07871471
+#7     645 59637  1      24.7  0.2878  0.59216    # deltaR = 24.7/65308 = 0.0003782079
+#8     644 57430  1    2207.5 25.7479 5.22e-07 ***# deltaR = 2207.5/65308 = 0.03380137
+#9     643 57092  1     337.8  3.9405  0.04776 *  # deltaR = 337.8/65308 = 0.005172414
+#10    642 55511  1    1580.9 18.4393 2.06e-05 ***# deltaR = 1580.9/65308 = 0.02420684
+#11    641 55053  1     458.0  5.3425  0.02124 *  # deltaR = 458/65308 = 0.007012923
+#12    621 42820 20   1957.37  1.0570 0.1057310   # deltaR = 1957.37/65308 = 0.02997137
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+#### obtain coefficients and multiple R-squared for each stage of each model
+summary(aa1)
+lm.beta(aa1)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa2)
+lm.beta(aa2)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa3)
+lm.beta(aa3)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa4)
+lm.beta(aa4)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa5)
+lm.beta(aa5)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa6)
+lm.beta(aa6)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa7)
+lm.beta(aa7)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa8)
+lm.beta(aa8)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa9)
+lm.beta(aa9)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa10)
+lm.beta(aa10)
+15# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(aa11)
+lm.beta(aa11)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+
+#Visualize
+
+ggplot(lec, aes(x=atq_appr, y=masq_aa_total.x, color = timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Approach", y= "Amxious Arousal") +
+  labs(color= "Timepoint")
+
+qplot(x=atq_appr, y=masq_aa_total.x, facets = ~lifeevent, color = timepoint, data = lec) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F) +
+  labs(x= "Approach", y= "Amxious Arousal") +
+  labs(facets= "Life Event") +
+  labs(color= "Timepoint")
+
+
+
+ggplot(lec, aes(x=atq_avoi, y=masq_aa_total.x)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+
+ggplot(lec, aes(x=atq_appr, y=masq_aa_total.x)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+# "Control" for other DVs
+aaph0 <- lm(masq_aa_total.x ~ 1, data=lec)  # to obtain Total SS
+aaph1 <- lm(masq_aa_total.x ~ masq_dm_total, data=lec)  # effect of dm on aa
+aaph2 <- lm(masq_aa_total.x ~ masq_dm_total + age, data=lec)  # effect of age 
+aaph3 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+aaph4 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+aaph5 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+aaph6 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+aaph7 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+aaph8 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+aaph9 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+aaph10 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+               atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+aaph11 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+               atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+aaph12 <- lm(masq_aa_total.x ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+               atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+# model comparison for anxious arousal after controlling for dm
+anova(aaph0,aaph1, aaph2, aaph3, aaph4, aaph5, aaph6, aaph7, aaph8, aaph9, aaph10, aaph11, aaph12)
+# after controlling for dm
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#1     652 65308                                    
+#2     651 46727  1   18581.1 285.2079 < 2.2e-16 ***
+#3     650 46466  1     261.1   4.0077  0.045713 *  
+#4     649 44522  1    1943.7  29.8349 6.741e-08 ***
+#5     648 44522  1       0.0   0.0000  0.995653    
+#6     647 44374  1     147.9   2.2707  0.132330    
+#7     646 44171  1     203.3   3.1210  0.077766 .  
+#8     645 43947  1     223.9   3.4361  0.064246 .  
+#9     644 43944  1       2.6   0.0398  0.841943    
+#10    643 43764  1     180.0   2.7621  0.097010 .  
+#11    642 42962  1     802.0  12.3106  0.000482 ***
+#12    641 41899  1    1062.9  16.3150 6.015e-05 ***
+#13    640 41696  1     203.8   3.1282  0.077424 .  
+#---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+## Low Positive Affect
+
+# Build models
+lpa00 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+            + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+            + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+            + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+            + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+            + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec) # to obtain total R-squared to report to reader
+lpa0 <- lm(masq_lpa_total ~ 1, data=lec)  # to obtain Total SS
+lpa1 <- lm(masq_lpa_total ~ age, data=lec)  # effect of age 
+lpa2 <- lm(masq_lpa_total ~ timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+lpa3 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+lpa4 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+lpa5 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+lpa6 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+lpa7 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+lpa8 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+lpa9 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+lpa10 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+              atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+lpa11 <- lm(masq_lpa_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+              atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+# Total variance explained by all IVs of interest
+summary(lpa00)
+
+
+# model comparison for low positive affect
+anova(lpa0,lpa1, lpa2, lpa3, lpa4, lpa5, lpa6, lpa7, lpa8, lpa9, lpa10, lpa11, lpa00)  
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#0     652 82072                                    
+#1     651 82052  1      20.3   0.2324   0.63316    # deltaR = 20.3/82072 = 0.0002473438
+#2     650 79249  1    2802.8  32.0507 3.044e-08 ***# deltaR = 2802.8/82072 = 0.0341505
+#3     649 79178  1      70.6   0.8079   0.37361    # deltaR = 70.6/82072 =  0.0008602203
+#4     648 78988  1     190.6   2.1794   0.14413    # deltaR = 190.6/82072 = 0.002322351
+#5     647 78984  1       4.3   0.0493   0.82596    # deltaR = 4.3/82072 = 5.239302e-05
+#6     646 70248  1    8735.5  99.8926 < 2.2e-16 ***# deltaR = 8735.5/82072 = 0.106437
+#7     645 70240  1       8.4   0.0965   0.75836    # deltaR = 8.4/82072 = 0.0001023492
+#8     644 57590  1   12649.5 144.6494 < 2.2e-16 ***# deltaR = 12649.5/82072 = 0.1541269
+#9     643 57538  1      52.0   0.5944   0.44531     # deltaR = 52/82072 = 0.00063359
+#10    642 57198  1     340.2   3.8897   0.05117 .  # deltaR = 340.2/82072 = 0.004145141
+#11    641 57125  1      73.4   0.8397   0.36435    # deltaR = 73.4/82072 = 0.0008943367
+#12    621 54306 20    2818.5   1.6115   0.04466 *  # deltaR = 2818.5/82072 = 0.0343418
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+#### obtain coefficients and R-squared values between models
+summary(lpa1)
+lm.beta(lpa1)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa2)
+lm.beta(lpa2)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa3)
+lm.beta(lpa3)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa4)
+lm.beta(lpa4)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa5)
+lm.beta(lpa5)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa6)
+lm.beta(lpa6)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa7)
+lm.beta(lpa7)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa8)
+lm.beta(lpa8)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa9)
+lm.beta(lpa9)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa10)
+lm.beta(lpa10)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(lpa11)
+lm.beta(lpa11)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+
+
+#Visualize
+
+
+ggplot(lec, aes(x=atq_appr, y=masq_lpa_total, color = lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=atq_appr, y=masq_lpa_total, color = timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=atq_avoi, y=masq_lpa_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+
+ggplot(lec, aes(x=atq_appr, y=masq_lpa_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+# Control for other DV
+lpaph0 <- lm(masq_lpa_total ~ 1, data=lec)  # to obtain Total SS
+lpaph0 <- lm(masq_lpa_total ~ masq_dm_total, data=lec)  # dm on lpa
+lpaph1 <- lm(masq_lpa_total ~ masq_dm_total + age, data=lec)  # effect of age 
+lpaph2 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+lpaph3 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+lpaph4 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+lpaph5 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+lpaph6 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+lpaph7 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+lpaph8 <- lm(masq_lpa_total ~ masq_dm_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+
+# model comparison for anxious arousal after controlling for lpa
+anova(lpaph0,lpaph1, lpaph2,lpaph3, lpaph4, lpaph5, lpaph6,lpaph7, lpaph8)
+#Res.Df   RSS Df Sum of Sq       F    Pr(>F)    
+#1    651 64221                                   
+#2    650 64197  1      24.4  0.2932    0.5884    
+#3    649 64037  1     159.6  1.9216    0.1662    
+#4    648 64024  1      13.3  0.1599    0.6894    
+#5    647 64008  1      15.5  0.1867    0.6658    
+#6    646 64005  1       3.7  0.0444    0.8331    
+#7    645 61688  1    2317.0 27.8941 1.756e-07 ***
+#8    644 61627  1      60.4  0.7266    0.3943    
+#9    643 53411  1    8216.4 98.9160 < 2.2e-16 ***
+#  ---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+## Depressed Mood
+
+# Build models
+dm00 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+           + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+           + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+           + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+           + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+           + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec) # to obtain total R-squared to report to reader
+dm0 <- lm(masq_dm_total ~ 1, data=lec)  # to obtain Total SS
+dm1 <- lm(masq_dm_total ~ age, data=lec)  # effect of age 
+dm2 <- lm(masq_dm_total ~ timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+dm3 <- lm(masq_dm_total ~ timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+dm4 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+dm5 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+dm6 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+dm7 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+dm8 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+dm9 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+            atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+dm10 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent, data=lec)   # effect of interaction between lifeevent and approach (lower-order constituent step)
+dm11 <- lm(masq_dm_total ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+             atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent, data=lec)   # effect of interaction between spring break, lifeevent, and approach
+
+# Total variance explained by all IVs of interest
+summary(dm00)
+
+# model comparison 
+anova(dm0,dm1, dm2, dm3, dm4, dm5, dm6, dm7, dm8, dm9, dm10, dm11, dm00)  
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#0     652 24834                                    
+#1     651 24833  1       0.3   0.0095   0.92208    # deltaR = 0.3/24834 = 1.208021e-05
+#2     650 22505  1    2328.2  87.2509< 2.2e-16 ***# deltaR = 2328.2/24834 = 0.0937505
+#3     649 22472  1      33.6   1.2578   0.26110    # deltaR = 33.6/24834 = 0.001352984
+#4     648 22327  1     144.7  5.4245   0.01981 *  # deltaR = 144.7/24834 = 0.005826689
+#5     647 22327  1       0.0   0.0014   0.97060    # deltaR = 0.0/24834 = 0.0
+#6     646 18685  1    3641.7 136.4750 < 2.2e-16 ***# deltaR = 3641.7/24834 = 0.1466417
+#7     645 18634  1      51.4   1.9263   0.16442    # deltaR = 51.4/24834 = 0.002069743
+#8     644 17255  1    1378.7  51.6660 1.594e-12 ***# deltaR = 1378.7/24834 = 0.05551663
+#9     643 17133  1     122.2   4.5810   0.03220 *   # deltaR = 122.2/24834 = 0.004920673
+#10    642 17070  1      63.2   2.3674   0.12329    # deltaR = 63.2/24834 = 0.002544898
+#11    641 17005  1      64.2   2.4043   0.12042    # deltaR = 64.2/24834 = 0.002585165
+#12    621 16571 20     434.6   0.8143   0.69732    # deltaR = 434.6/24834 = 0.0175002
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#### obtain coefficients and R-squared values between models
+summary(dm1)
+lm.beta(dm1)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm2)
+lm.beta(dm2)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm3)
+lm.beta(dm3)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm4)
+lm.beta(dm4)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm5)
+lm.beta(dm5)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm6)
+lm.beta(dm6)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm7)
+lm.beta(dm7)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm8)
+lm.beta(dm8)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm9)
+lm.beta(dm9)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm10)
+lm.beta(dm10)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+summary(dm11)
+lm.beta(dm11)
+# coef: Multiple R-squared: , F-statistic:,  p-value: , ∆R = 
+
+
+#Visualize
+
+
+ggplot(lec, aes(x=age, y=masq_dm_total, color = timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=age, y=masq_dm_total, color = lifeevent)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=atq_appr, y=masq_dm_total, color = timepoint)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+ggplot(lec, aes(x=atq_avoi, y=masq_dm_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+
+ggplot(lec, aes(x=atq_appr, y=masq_dm_total)) +
+  geom_point(shape=1) +
+  scale_colour_hue(l=50) +
+  geom_smooth(method=lm, se=F)
+
+# To control for other correlated DVs
+dmph0 <- lm(masq_dm_total ~ 1, data=lec)  # to obtain Total SS
+dmph2 <- lm(masq_dm_total ~ rrq_rum_total, data=lec)  # control for rumination
+dmph3 <- lm(masq_dm_total ~ rrq_rum_total + age, data=lec)  # effect of age 
+dmph4 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age, data=lec)  # main effect of covid warning onset (spring break divide)
+dmph5 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age, data=lec)   # effect of interaction between spring break and age 
+dmph6 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent, data=lec)   # life event
+dmph7 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint, data=lec)   # effect of interaction between spring break and lifeevent
+dmph8 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi, data=lec)   # avoidance
+dmph9 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint, data=lec)   # effect of interaction between spring break and avoidance
+dmph10 <- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr, data=lec)   # approach
+dmph11<- lm(masq_dm_total ~ rrq_rum_total + timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+              atq_appr:timepoint, data=lec)   # effect of interaction between spring break and approach
+
+# model comparison controlling for DVs
+anova(dmph0,dmph2, dmph3, dmph4, dmph5, dmph6, dmph7, dmph8, dmph9, dmph10, dmph11)  
+# just controlling for lpa
+#Res.Df   RSS Df Sum of Sq        F    Pr(>F)    
+#1     652 24834                                    
+#2     651 19432  1    5401.5 218.0580 < 2.2e-16 ***
+#3     650 19429  1       2.8   0.1113 0.7387392    
+#4     649 18185  1    1244.2  50.2270 3.617e-12 ***
+#5     648 18170  1      14.7   0.5930 0.4415325    
+#6     647 18093  1      77.9   3.1435 0.0767056 .  
+#7     646 18092  1       0.1   0.0034 0.9534095    
+#8     645 16408  1    1684.5  68.0029 9.236e-16 ***
+#9     644 16349  1      59.2   2.3892 0.1226655    
+#10    643 16003  1     346.1  13.9725 0.0002021 ***
+#11    642 15903  1     100.0   4.0351 0.0449817 *  
+#  ---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# controlling for anxious arousal
+#   Res.Df   RSS Df Sum of Sq        F    Pr(>F) 
+#1     652 24834                                      
+#2     651 17768  1    7065.5 351.8374 < 2.2e-16 ***
+#3     650 17743  1      24.6   1.2274 0.2683270    
+#4     649 15407  1    2336.1 116.3309 < 2.2e-16 ***
+#5     648 15392  1      15.6   0.7780 0.3780845    
+#6     647 15242  1     149.9   7.4625 0.0064728 ** 
+#7     646 15218  1      23.5   1.1688 0.2800535    
+#8     645 13763  1    1455.0  72.4526 < 2.2e-16 ***
+#9     644 13730  1      33.0   1.6430 0.2003778    
+#10    643 13149  1     581.2  28.9430 1.046e-07 ***
+#11    642 12892  1     256.6  12.7765 0.0003773 ***
+#  ---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# controlling for rumination
+#   Res.Df   RSS Df Sum of Sq        F    Pr(>F) 
+#1     652 24834                                      
+#2     651 17768  1    7065.5 351.8374 < 2.2e-16 ***
+#3     650 17743  1      24.6   1.2274 0.2683270    
+#4     649 15407  1    2336.1 116.3309 < 2.2e-16 ***
+#5     648 15392  1      15.6   0.7780 0.3780845    
+#6     647 15242  1     149.9   7.4625 0.0064728 ** 
+#7     646 15218  1      23.5   1.1688 0.2800535    
+#8     645 13763  1    1455.0  72.4526 < 2.2e-16 ***
+#9     644 13730  1      33.0   1.6430 0.2003778    
+#10    643 13149  1     581.2  28.9430 1.046e-07 ***
+#11    642 12892  1     256.6  12.7765 0.0003773 ***
+#  ---
+#  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Assess Correlation between DVs
+Y <- cbind(lec$pswq_total.x, lec$rrq_rum_total,lec$rrq_refl_total, lec$masq_aa_total.x,lec$masq_lpa_total, lec$masq_dm_total)
+cor(Y, method = c("pearson"))
+Y
+
+### Assess for differences in endorsed life events
+# try this --> filter(xor(condition1, condition2)), found here: https://suzan.rbind.io/2018/02/dplyr-tutorial-3/
+
+
+
+##############################################################
+##           DESCRIPTIVE STATISTICS FOR TABLES              ##
+##############################################################
+
+tables<-freezing_raw_d_age[,c("timepoint", "age_trend", "pswq_total.x", "rrq_refl_total", "rrq_rum_total", "masq_aa_total.x", "masq_lpa_total", "masq_dm_total", "atq_avoi", "atq_appr")]
+tables2<-lec[,c("lifeevent", "timepoint", "age_trend", "pswq_total.x", "rrq_refl_total", "rrq_rum_total", "masq_aa_total.x", "masq_lpa_total", "masq_dm_total", "atq_avoi", "atq_appr")]
+
+
+###
+#table 1 - self-report desc stats
+###
+
+# rename scores
+tables$Worry <- tables$pswq_total.x
+tables$Rumination <- tables$rrq_rum_total
+tables$Reflection <- tables$rrq_refl_total
+tables$Anxious_Arousal <- tables$masq_aa_total.x
+tables$Low_Positive_Affect <- tables$masq_lpa_total
+tables$Depressed_Mood <- tables$masq_dm_total
+tables$Avoidance <- tables$atq_avoi
+tables$Approach <- tables$atq_appr
+tables$Group <- tables$timepoint
+tables$Age <- tables$age_trend
+
+# rid old columns
+tables <- tables[,c(11:20)]
+
+tables_gpre<-tables %>%
+  dplyr::filter(tables$Group == "pre-spring break")
+tables_gpre<-tables_gpre[,c(1:8)]
+
+t1<- describe(tables_gpre)
+formattable(t1)
+
+tables_gpost<-tables %>%
+  dplyr::filter(tables$Group == "post-spring break")
+tables_gpost<-tables_gpost[,c(1:8)]
+
+t2<- describe(tables_gpost)
+formattable(t2)
+
+tables_o<-tables %>%
+  dplyr::filter(tables$Age == "≥20")
+tables_o<-tables_o[,c(1:8)]
+
+t3<- describe(tables_o)
+formattable(t3)
+
+tables_y<-tables %>%
+  dplyr::filter(tables$Age == "<20")
+tables_y<-tables_y[,c(1:8)]
+
+t4<- describe(tables_y)
+formattable(t4)
+
+tables_yes<-tables2 %>%
+  dplyr::filter(tables2$lifeevent == "yes")
+tables_yes<-tables_yes[,c(4:11)]
+
+t5<- describe(tables_yes)
+formattable(t5)
+
+
+tables_no <-tables2 %>%
+  dplyr::filter(tables2$lifeevent == "no")
+tables_no<-tables_no[,c(4:11)]
+
+t6<- describe(tables_no)
+formattable(t6)
+##################################################################################################
 ## Let's check correlation between anxious arousal, apprehension, rumination & anhedonic depression scores
 
 pairs.panels(freezing_raw_d_age[,c("masq_lpa_total", "masq_dm_total", "pswq_total.x", "masq_aa_total.x", "rrq_total.x")], 
@@ -814,7 +1511,7 @@ freezing_raw_d_age<-freezing_raw_d_age %>%
 
 count(freezing_raw_d_age$temperament)
 
-temp_group<- lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*temperament, freezing_raw_d_age)
+temp_group<- lm(cbind(pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*temperament, freezing_raw_d_age)
 temp_man<-Manova(temp_group, test.statistic = "Pillai")
 temp_man
 
@@ -845,7 +1542,7 @@ pairs.panels(freezing_raw_d_age[,c("atq_appr", "atq_avoi", "rrq_total.x", "pswq_
              ellipses = TRUE # show correlation ellipses
 )
 
-mlm1<-lm(cbind(pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+mlm1<-lm(cbind(pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_lpa_total, masq_dm_total) ~ atq_appr+atq_avoi+timepoint , data = freezing_raw_d_age)
 summary(mlm1)
 
 
@@ -855,10 +1552,16 @@ coef(mlm1)
 vcov(mlm1)
 
 
+
 x1<-lm(pswq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
 getDeltaRsquare(x1)
-x2<-lm(rrq_total.x ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+coef(x1)
+x2<-lm(rrq_refl_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
 getDeltaRsquare(x2)
+
+coef(x2)
+x6<-lm(rrq_rum_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
+getDeltaRsquare(x6)
 x3<-lm(masq_lpa_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
 getDeltaRsquare(x3)
 x4<-lm(masq_dm_total ~ atq_avoi + atq_appr, data = freezing_raw_d_age)
@@ -889,7 +1592,7 @@ lm.beta(test)
 Anova(mlm1)
 
 grouped.data.mlm <- freezing_raw_d_age %>%
-  gather(key = "variable", value = "value", pswq_total.x, rrq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  gather(key = "variable", value = "value", pswq_total.x, rrq_refl_total, rrq_rum_total, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
   group_by(variable)
 
 grouped.data.mlm %>% anova_test(value ~ atq_avoi*atq_appr)
@@ -1530,15 +2233,15 @@ as.numeric(afq_endorsement$avgtime)
 psych::describe((afq_endorsement$avgtime))
 
 ggplot(afq_endorsement, aes(x=avgtime) + 
-  geom_histogram(color="black", fill="white") +
-  labs(x = "Avg length of time since freeze"))
+         geom_histogram(color="black", fill="white") +
+         labs(x = "Avg length of time since freeze"))
 
 
 ## Visualize Endorsement Section
 ggplot(afq_endorsement, aes(x=afq_1)) + 
   geom_histogram(color="black", fill="white") +
   labs(x = "Couldn't Move or Think")
-  
+
 ggplot(afq_endorsement, aes(x=afq_3)) + 
   geom_histogram(color="black", fill="white") +
   labs (x = "Violent Situation")
@@ -1581,7 +2284,7 @@ afq$masq_ad_total<-freezing_raw_d_age$masq_ad_total.x
 # Remove outliers of afqs in AFQ set
 #psych::describe(afq$afq_total)
 #afq_no_outlier<-afq %>%
- # dplyr::filter(afq_total <= 293)
+# dplyr::filter(afq_total <= 293)
 
 ## Visualize Correlations
 
@@ -2500,7 +3203,7 @@ afq_cor_table_wide<- melt(afq_cor_table)
 
 #make the plots with ggplot
 ggplot(afq_cor_table, aes(x=afq_cog_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.4, fill="#FF6666")
-  
+
 ggplot(afq_cor_table, aes(x=afq_phys_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.4, fill="cyan4")
 
 ggplot(afq_cor_table, aes(x=afq_soc_total)) + geom_histogram(color="black", fill="white") + geom_density(alpha=.5, fill="darkgoldenrod2")
@@ -2845,8 +3548,8 @@ text(pure_s3d$xyz.convert(pure16_cor_table[, 1:3]), labels = rownames(pure16_cor
 
 # Make new correlation table for visualization
 lowMASQ_cor<- dplyr::bind_rows(afq_1_cor,afq_8_cor,afq_12_cor,afq_14_cor,afq_15_cor,
-                                    afq_30_cor,afq_37_cor,afq_38_cor,afq_39_cor,afq_53_cor,afq_57_cor,afq_58_cor,afq_59_cor,
-                                    afq_64_cor,afq_68_cor,afq_69_cor)
+                               afq_30_cor,afq_37_cor,afq_38_cor,afq_39_cor,afq_53_cor,afq_57_cor,afq_58_cor,afq_59_cor,
+                               afq_64_cor,afq_68_cor,afq_69_cor)
 
 ind <- seq(1, nrow(lowMASQ_cor), by=5)
 lowMASQ_cor<-lowMASQ_cor[ind, ]
@@ -3036,7 +3739,7 @@ fa(efa_freeze,nfactors=9,rotate="oblimin",fm="minres")
 
 
 #efa_df<-freezing_raw %>%
-  #dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
+#dplyr::select(masq_01:masq_89,afqs_1:afqs_70)
 #fa.parallel(efa_df, fm = 'minres', fa = 'fa', plot = FALSE)
 #fa(efa_df,nfactors=11,rotate="oblimin",fm="minres")
 
@@ -3062,7 +3765,7 @@ social   =~ afqs_58 + afqs_59 + afqs_60 + afqs_61 + afqs_62 + afqs_63 + afqs_64 
 '
 cfa.freeze<-cfa(Freeze.model, data=efa_freeze, std.lv=TRUE, missing = 'fiml')
 summary(cfa.freeze, fit.measures = T, standardized = T)
- 
+
 ## Let's try the theoretical 2 factor model
 Freeze.model.2 <- ' 
 cogphys  =~ afqs_1 + afqs_2 + afqs_3 + afqs_4 + afqs_5 + afqs_6 + afqs_7 + afqs_8 + afqs_9 +
@@ -3336,9 +4039,9 @@ afq_69<-afq_69[ -c(2:4), ]
 
 
 afq_cor_table_kmc<- dplyr::bind_rows(afq_1,afq_2,afq_3,afq_4,afq_5,afq_6,afq_7,afq_8,afq_9,afq_10,afq_11,afq_12,afq_13,afq_14,afq_15,afq_16,afq_17,afq_18,afq_19,
-                                 afq_20,afq_21,afq_22,afq_23,afq_24,afq_25,afq_26,afq_27,afq_28,afq_29,afq_30,afq_31,afq_32,afq_33,afq_34,afq_35,afq_36,afq_37,
-                                 afq_38,afq_39,afq_40,afq_41,afq_42,afq_43,afq_44,afq_45,afq_46,afq_47,afq_48,afq_49,afq_50,afq_51,afq_52,afq_53,afq_54,afq_55,
-                                 afq_56,afq_57,afq_58,afq_59,afq_60,afq_61,afq_62,afq_63,afq_64,afq_65,afq_66,afq_67,afq_68,afq_69)
+                                     afq_20,afq_21,afq_22,afq_23,afq_24,afq_25,afq_26,afq_27,afq_28,afq_29,afq_30,afq_31,afq_32,afq_33,afq_34,afq_35,afq_36,afq_37,
+                                     afq_38,afq_39,afq_40,afq_41,afq_42,afq_43,afq_44,afq_45,afq_46,afq_47,afq_48,afq_49,afq_50,afq_51,afq_52,afq_53,afq_54,afq_55,
+                                     afq_56,afq_57,afq_58,afq_59,afq_60,afq_61,afq_62,afq_63,afq_64,afq_65,afq_66,afq_67,afq_68,afq_69)
 
 afq_cor_table_kmc<-afq_cor_table_kmc[,2:4]
 
@@ -3674,9 +4377,9 @@ afq_69_cor<-afq_69_cor[,-1]
 ## append all data frames into one
 
 dd_cor_table<- dplyr::bind_rows(afq_6_cor,afq_8_cor,afq_9_cor,afq_10_cor,afq_11_cor,afq_18_cor,
-                                     afq_21_cor,afq_22_cor,afq_42_cor,afq_44_cor,
-                                     afq_45_cor,afq_46_cor,afq_47_cor,afq_49_cor,afq_52_cor,afq_64_cor,
-                                     afq_65_cor,afq_66_cor,afq_67_cor,afq_68_cor,afq_69_cor)
+                                afq_21_cor,afq_22_cor,afq_42_cor,afq_44_cor,
+                                afq_45_cor,afq_46_cor,afq_47_cor,afq_49_cor,afq_52_cor,afq_64_cor,
+                                afq_65_cor,afq_66_cor,afq_67_cor,afq_68_cor,afq_69_cor)
 
 ## clear total score rows
 ind <- seq(1, nrow(dd_cor_table), by=5)
@@ -3762,7 +4465,7 @@ afq_dd_2$masq_aa_total<-freezing_raw_d$masq_aa_total
 
 ## Generate list of pearson coefficients between items and totals ##
 ## make correlation matrices objects
- 
+
 afq_1_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_1", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
 afq_2_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_2", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
 afq_3_dd_cor<-as.data.frame(cor(afq_dd_2[, c("afqs_3", "afq_cogandphys_total", "afq_cog_total", "afq_phys_total","pswq_total", "masq_aa_total")], method = "pearson"))
@@ -4594,9 +5297,9 @@ ind <- seq(1, nrow(afq_cor_table), by=5)
 afq_cor_table<-afq_cor_table[ind, ]
 
 item_final<-c("afq_1","afq_2","afq_3","afq_6","afq_7","afq_8","afq_9","afq_10",
-             "afq_14","afq_16","afq_18","afq_22","afq_24","afq_30","afq_36","afq_37",
-             "afq_41","afq_42","afq_43","afq_51","afq_62","afq_64","afq_65","afq_66","afq_67",
-             "afq_68","afq_69", "afq_70")
+              "afq_14","afq_16","afq_18","afq_22","afq_24","afq_30","afq_36","afq_37",
+              "afq_41","afq_42","afq_43","afq_51","afq_62","afq_64","afq_65","afq_66","afq_67",
+              "afq_68","afq_69", "afq_70")
 
 subscale<-c("cognitive", "cognitive", "cognitive", "cognitive", 
             "cognitive", "cognitive", "cognitive", "cognitive", 
@@ -5453,6 +6156,7 @@ hist(freezing_raw_d$afqs_14)
 hist(freezing_raw_d$afqs_30)
 
 hist(freezing_raw_d$afqs_7)
+efa_frzfin
 
 
 efa.frz.3<-fa(efa_frzfin, nfactors = 3, rotate = "oblimin")
@@ -5463,8 +6167,52 @@ S  =~ afqs_62 + afqs_64 + afqs_65 + afqs_66 + afqs_67 + afqs_68 + afqs_69 + afqs
 C =~ afqs_1 + afqs_2 + afqs_6 + afqs_8 + afqs_9 + afqs_10 + afqs_16 + afqs_18
 P  =~ afqs_7 + afqs_22 + afqs_36 + afqs_37 + afqs_41 + afqs_42 + afqs_43 + afqs_51
 '
+## Get factor totals and extract pertinent data for SEM proposal
+
+freeze_data<-freezing_raw_d_age
+
+freeze_data$afq_soc<-rowSums(freezing_raw_d_age[,c("afqs_62.x","afqs_64.x","afqs_65.x","afqs_66.x","afqs_67.x","afqs_68.x","afqs_69.x","afqs_70.x")])
+freeze_data$afq_phy<-rowSums(freezing_raw_d_age[,c("afqs_7.x","afqs_22.x","afqs_36.x","afqs_37.x","afqs_41.x","afqs_42.x","afqs_43.x","afqs_51.x")])
+freeze_data$afq_cog<-rowSums(freezing_raw_d_age[,c("afqs_1.x","afqs_2.x","afqs_6.x","afqs_8.x","afqs_9.x","afqs_10.x","afqs_16.x","afqs_18.x")])
 
 
+
+freeze_data <- freeze_data[,c("afqs_62.x","afqs_64.x","afqs_65.x","afqs_66.x","afqs_67.x","afqs_68.x","afqs_69.x","afqs_70.x",
+                              "afqs_7.x","afqs_22.x","afqs_36.x","afqs_37.x","afqs_41.x","afqs_42.x","afqs_43.x","afqs_51.x",
+                              "afqs_1.x","afqs_2.x","afqs_6.x","afqs_8.x","afqs_9.x","afqs_10.x","afqs_16.x","afqs_18.x",
+                              "masq_lpa_total", "masq_dm_total", "masq_aa_total.x", "pswq_total.x", "rrq_rum_total", "afq_soc", "afq_phy", "afq_cog")]
+
+
+
+freeze_data_totals <- freeze_data[,c("masq_lpa_total", "masq_dm_total", "masq_aa_total.x", "pswq_total.x", "rrq_rum_total", "afq_soc", "afq_phy", "afq_cog")]
+
+
+freeze_socitems <- freeze_data[,c("afqs_62.x","afqs_64.x","afqs_65.x","afqs_66.x","afqs_67.x","afqs_68.x","afqs_69.x","afqs_70.x",
+                                  "afq_soc", "afq_phy", "afq_cog")]
+
+freeze_cogitems <- freeze_data[,c("afqs_1.x","afqs_2.x","afqs_6.x","afqs_8.x","afqs_9.x","afqs_10.x","afqs_16.x","afqs_18.x",
+                                  "afq_soc", "afq_phy", "afq_cog")]
+
+freeze_physitems <- freeze_data[,c("afqs_7.x","afqs_22.x","afqs_36.x","afqs_37.x","afqs_41.x","afqs_42.x","afqs_43.x","afqs_51.x","afq_soc", "afq_phy", "afq_cog")]
+
+install.packages("Hmisc")
+library(Hmisc)
+
+rcorr(as.matrix(freeze_data_totals))
+x2$P
+
+
+soc_factor<-freeze_data[,c("afqs_62.x","afqs_64.x","afqs_65.x","afqs_66.x","afqs_67.x","afqs_68.x","afqs_69.x","afqs_70.x")]
+cronbach(soc_factor)
+
+cog_factor<-freeze_data[,c("afqs_1.x","afqs_2.x","afqs_6.x","afqs_8.x","afqs_9.x","afqs_10.x","afqs_16.x","afqs_18.x")]
+cronbach(cog_factor)
+
+phys_factor<-freeze_data[,c("afqs_7.x","afqs_22.x","afqs_36.x","afqs_37.x","afqs_41.x","afqs_42.x","afqs_43.x","afqs_51.x")]
+cronbach(phys_factor)
+
+
+write.csv(freeze_data, "Freeze_data.csv")
 
 #Lets fit this model and check on how it performed
 
@@ -5472,7 +6220,37 @@ frz.cfa.fit<-cfa(frz.cfa, data = efa_frzfin, missing = 'fiml')
 summary(frz.cfa.fit, fit.measures = T, standardized = T)
 write.csv(efa_frzfin, "EFA_Freeze_HW2.csv")
 
+model1<-'afq_soc ~~ afq_soc
+         afq_cog ~~ afq_cog
+         afq_phy ~~ afq_phy
+         rrq_rum_total ~~ rrq_rum_total
+         pswq_total.x ~~ pswq_total.x
+         masq_lpa_total ~~ masq_lpa_total
+         masq_dm_total ~~ masq_dm_total
+         masq_aa_total.x ~~ masq_aa_total.x
+         rrq_rum_total ~~ pswq_total.x
+         masq_lpa_total ~~ masq_dm_total
+         afq_phy ~ rrq_rum_total + pswq_total.x + masq_aa_total.x
+         afq_soc ~ rrq_rum_total + pswq_total.x + masq_aa_total.x
+         afq_cog ~ rrq_rum_total + pswq_total.x + masq_aa_total.x
+         masq_lpa_total ~ rrq_rum_total + pswq_total.x
+         masq_dm_total ~ rrq_rum_total + pswq_total.x + masq_aa_total.x
+         masq_aa_total.x ~ rrq_rum_total + pswq_total.x
+         '
 
+m.fit<-sem(model1, data = freeze_data, missing = 'fiml')
+
+install.packages("semPlot")
+library(semPlot)
+install.packages("qgraph")
+library(qgraph)
+install.packages("tidySEM")
+library(tidySEM)
+
+graph_sem(model = m.fit)
+describe(m.fit)
+
+summary(m.fit, fit.measures = T, standardized = T)
 
 
 
@@ -5491,3 +6269,497 @@ pairs.panels(freezing_raw_d_age[,c("masq_ad_total.x", "pswq_total.x", "masq_aa_t
              method = "pearson", # correlation method
              hist.col = "#00AFBB"
 )
+
+
+
+#################################################################
+#################################################################
+
+## OLD ANALYSES NEVER USED IN SPRING 2020 DATA - DEMOGRAPHICS  ##
+
+#################################################################
+#################################################################
+
+freezing_demo %>%
+  count(life, GENDER)
+
+count(freezing_demo$timepoint,freezing_demo$gender)
+
+
+## Create pre-spring break & post-spring break groups for discrete testing later
+pre_sb<-freezing_raw_d_age %>%
+  dplyr::filter(freezing_raw_d_age$record_id < 540)
+
+post_sb<-freezing_raw_d_age %>%
+  dplyr::filter(freezing_raw_d_age$record_id >= 540)
+
+## Clean Demographics before importing into freezing raw set
+Demographics<- Demographics[,c(2,9:19)]
+
+freezing_demo<-freezing_raw_d_age
+names(freezing_demo)[names(freezing_demo) == "name.x"] <- "name"
+freezing_demo<- merge(freezing_demo,Demographics,by="name")
+
+#reorder columns for visibility
+freezing_demo$masq_lpa_total<- rowSums(freezing_demo[, c("masq_01.x","masq_14.x","masq_18.x","masq_23.x","masq_27.x","masq_30.x","masq_35.x","masq_36.x","masq_40.x","masq_49.x",
+                                                         "masq_58.x","masq_72.x","masq_78.x","masq_86.x")])
+freezing_demo$masq_dm_total<- rowSums(freezing_demo[,c("masq_44.x","masq_33.x", "masq_26.x", "masq_53.x","masq_66.x", "masq_21.x","masq_39.x","masq_89.x")])
+
+freezing_demo_pre_sb<-freezing_demo %>%
+  dplyr::filter(freezing_demo$record_id < 540)
+
+freezing_demopost_sb<-freezing_demo %>%
+  dplyr::filter(freezing_demo$record_id >= 540)
+
+
+#quickly assess sample sizes of various variables
+count(freezing_demo, vars=RACE)
+#should we remove small samples?
+freezing_demo_race <- freezing_demo %>%
+  dplyr::filter(RACE != "Native Hawaiian or Other Pacific Islander") 
+
+count(freezing_demo, vars="GENDER")
+#should we remove small samples? 
+#if yes..then
+freezing_demo_twogender <- freezing_demo %>%
+  dplyr::filter(record_id != 509) %>%
+  dplyr::filter(record_id != 81)
+
+
+count(freezing_demo, vars=CLASS.SELF)
+#should we compare extremes (i.e. lower vs upper class?)
+#if yes..then
+freezing_demo_class <- freezing_demo %>%
+  dplyr::filter(CLASS.SELF != "[Decline to Answer]")
+
+
+count(freezing_demo, vars=ETHNICITY)
+#should we remove small samples? 
+#if yes..then
+freezing_demo_twoethn <- freezing_demo %>%
+  dplyr::filter(record_id != 689)
+
+## Create upper and lower class
+freezing_demo<-freezing_demo %>%
+  mutate(college_class=case_when(
+    YEAR.COLLEGE %in% "Freshman or first-year student" ~ "lower class",
+    YEAR.COLLEGE %in% "Sophomore" ~ "lower class",
+    YEAR.COLLEGE %in% "Junior" ~ "upper class",
+    YEAR.COLLEGE %in% "Senior" ~ "upper class",
+  ))
+freezing_demo_upper<-freezing_demo %>%
+  filter(college_class == "upper class")
+freezing_demo_lower<-freezing_demo %>%
+  filter(college_class == "lower class")
+
+describe(freezing_demo_lower$age)
+describe(freezing_demo_upper$age)
+
+#############################################
+##      MANOVA - Demographics              ##
+#############################################
+
+#Checking Assumptions for freezing_demo dataframe
+#Let's check for levels of multicollinearity
+YD <- cbind(freezing_demo$pswq_total.x, freezing_demo$masq_aa_total.x,freezing_demo$masq_ad_total.x, freezing_demo$masq_dm_total, freezing_demo$masq_lpa_total)
+cor(YD, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_d<-box_m(freezing_demo[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo[,"pswq_total.x"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo[,"masq_aa_total.x"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo[,"masq_dm_total"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo[,"masq_lpa_total"],freezing_demo[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################################################
+#Checking Assumptions for freezing_demo_twogender dataframe
+#Let's check for levels of multicollinearity
+YDG <- cbind(freezing_demo_twogender$pswq_total.x, freezing_demo_twogender$masq_aa_total.x,freezing_demo_twogender$masq_ad_total.x, freezing_demo_twogender$masq_dm_total, freezing_demo_twogender$masq_lpa_total)
+cor(YDG, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_dg<-box_m(freezing_demo_twogender[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_twogender[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo_twogender[,"pswq_total.x"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twogender[,"masq_aa_total.x"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twogender[,"masq_dm_total"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twogender[,"masq_lpa_total"],freezing_demo_twogender[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo_twogender %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo_twogender, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twogender, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twogender, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twogender, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo_twogender %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################################################
+#Checking Assumptions for freezing_demo_twoethn dataframe
+#Let's check for levels of multicollinearity
+YDE <- cbind(freezing_demo_twoethn$pswq_total.x, freezing_demo_twoethn$masq_aa_total.x,freezing_demo_twoethn$masq_ad_total.x, freezing_demo_twoethn$masq_dm_total, freezing_demo_twoethn$masq_lpa_total)
+cor(YDE, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_de<-box_m(freezing_demo_twoethn[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_twoethn[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo_twoethn[,"pswq_total.x"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twoethn[,"masq_aa_total.x"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twoethn[,"masq_dm_total"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_twoethn[,"masq_lpa_total"],freezing_demo_twoethn[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo_twoethn %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo_twoethn, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twoethn, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twoethn, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo_twoethn, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo_twoethn %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################################################
+#Checking Assumptions for freezing_demo_race dataframe
+#Let's check for levels of multicollinearity
+YDR <- cbind(freezing_demo_race$pswq_total.x, freezing_demo_race$masq_aa_total.x,freezing_demo_race$masq_ad_total.x, freezing_demo_race$masq_dm_total, freezing_demo_race$masq_lpa_total)
+cor(YDR, method = c("pearson"))
+
+# Okay, it seems as if we have very high correlation between masq-ad and masq-ad14 (r = .93), this is a problem, adjust.
+# Proposed solution is to assess just the two-factor model of AD? ie utilize masq-AD8 & masq-AD14, but not the general score
+
+box_res_dr<-box_m(freezing_demo_race[,c("pswq_total.x", "masq_aa_total.x", "masq_dm_total", "masq_lpa_total")],freezing_demo_race[,"timepoint"])
+
+# The assumption that of equality of covariance matrices is met
+# Test for homogeneity of variance
+
+leveneTest(freezing_demo_race[,"pswq_total.x"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_race[,"masq_aa_total.x"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_race[,"masq_dm_total"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+leveneTest(freezing_demo_race[,"masq_lpa_total"],freezing_demo_race[,"timepoint"], location = "median", correction = "zero.connection")
+
+# The assumption that of equality of variance is met
+# Now, let's check for univariate normality, could use shapiro test, but because of high sample size, we will prioritize qq plots
+
+freezing_demo_race %>%
+  group_by(timepoint) %>%
+  shapiro_test(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  arrange(variable)
+
+# look at qq plots
+ggqqplot(freezing_demo_race, "pswq_total.x", facet.by = "timepoint",
+         ylab = "worry", ggtheme = theme_bw())
+ggqqplot(freezing_demo_race, "masq_aa_total.x", facet.by = "timepoint",
+         ylab = "arousal", ggtheme = theme_bw())
+ggqqplot(freezing_demo_race, "masq_dm_total", facet.by = "timepoint",
+         ylab = "depressed mood", ggtheme = theme_bw())
+ggqqplot(freezing_demo_race, "masq_lpa_total", facet.by = "timepoint",
+         ylab = "low positive affect", ggtheme = theme_bw())
+
+# Now, check multivariate normality
+freezing_demo_race %>%
+  select(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) %>%
+  mshapiro_test()
+
+
+#################
+# Gender Identity
+#################
+
+count(freezing_demo_twogender, c("GENDER", "timepoint"))
+
+A <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ GENDER*timepoint, freezing_demo_twogender)
+Manova(A, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There was a statistically significant difference between the 
+# binary gender identities on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .123, F(4,182) = 6.37, p< 0.0001
+
+# A significant Manova can be followed by univariate one-way ANOVA to examine each dependent variable
+
+grouped.data <- freezing_demo_twogender %>%
+  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable)
+
+grouped.data %>% anova_test(value ~ GENDER)
+
+## Report these results in the following manner: "Follow-up univariate ANOVAs, using a Bonferroni adjusted alpha level of 0.0125, showed that there was a 
+#statistically significant difference in PSWQ (F(1,185)= 19, p < .00001) between binary gender identity
+
+# Now, we need to check pairwise comparisons
+
+pwcg <- freezing_demo_twogender %>%
+  gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+  group_by(variable) %>%
+  games_howell_test(value ~ GENDER)
+pwcg
+
+#Report these results in the following manner: "Pairwise comparisons between groups confirmed the significant difference between groups such that cisgender females
+# had higher pswq scores
+
+
+#################
+# Ethnicity
+#################
+
+count(freezing_demo_twoethn, c("ETHNICITY", "timepoint"))
+
+
+B <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ ETHNICITY*timepoint, freezing_demo_twoethn)
+Manova(B, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There exists no significant difference between ethnicity endorsement
+# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .03, F(4,183) = 1.24, p = .295
+
+
+
+#################
+# College Class
+#################
+
+C <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ YEAR.COLLEGE*timepoint, freezing_demo)
+Manova(C, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There exists no significant difference between college year
+# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
+
+
+#################
+# RACE
+#################
+
+count(freezing_demo_race, c("RACE", "timepoint"))
+summary(freezing_demo_race)
+
+D <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ RACE*timepoint, freezing_demo_race)
+Manova(D, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There exists no significant difference between college year
+# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
+
+#################
+# SES
+#################
+count(freezing_demo_class, c("CLASS.SELF", "timepoint"))
+
+E <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ CLASS.SELF*timepoint, freezing_demo_class)
+Manova(E, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There exists no significant difference between socioeconomic statuses
+# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
+
+#################
+# SEX ORIENTATION
+#################
+
+count(freezing_demo$SEX.ORIENTATION)
+
+G <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ SEX.ORIENTATION*timepoint, freezing_demo)
+Manova(G, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There exists no significant difference between socioeconomic statuses
+# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
+
+#################
+# INTERNATIONAL
+#################
+
+count(freezing_demo, vars=INTERNATIONAL)
+
+
+H <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ INTERNATIONAL*timepoint, freezing_demo)
+Manova(H, test.statistic = "Pillai")
+
+# Report these results in the following manner: "There exists no significant difference between INTERNATIONAL status
+# on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm).
+
+# Computation - do not use, does not include all DVs
+
+#Y1 <- lm(cbind(pswq_total.x, masq_aa_total.x, masq_dm_total, masq_lpa_total) ~ timepoint*age_trend, freezing_raw_d_age)
+#age_man<-Manova(Y1, test.statistic = "Pillai")
+#age_man
+
+#count(freezing_raw_d_age, vars=age)
+
+# Report these results in the following manner: "There was a statistically significant difference between the 
+#timepoints on the combined dependent variables (pswq, masq-aa, masq-lpa & masq-dm), Pillai's Trace = .142, F(4,646) = 26.89, p< 0.0001
+
+# A significant Manova can be followed by univariate one-way ANOVA to examine each dependent variable
+
+#grouped.data <- freezing_raw_d_age %>%
+#gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+#group_by(variable)
+
+#grouped.data %>% anova_test(value ~ timepoint)
+
+## Report these results in the following manner: "Follow-up univariate ANOVAs, using a Bonferroni adjusted alpha level of 0.0125, showed that there was a 
+#statistically significant difference in MASQ-DM (F(1,651)= 67.2, p < .00001) and MASQ-LPA (F(1,651) = 23.1, p<.00001) between T1 and T2 groups
+
+# Now, we need to check pairwise comparisons
+
+#pwc <- freezing_raw_d_age %>%
+#gather(key = "variable", value = "value", pswq_total.x, masq_aa_total.x, masq_lpa_total, masq_dm_total) %>%
+#group_by(variable) %>%
+#games_howell_test(value ~ timepoint)
+#pwc
+
+#Report these results in the following manner: "Pairwise comparisons between groups confirmed the significant difference between groups such that T2 had higher scores
+#for masq-dm and masq-lpa 
+
+
+
+
+
+#### Unused hierarchical regression steps
+
+m12 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age, data=lec)   # Model 12
+m13 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent, 
+          data=lec)   # Model 13
+m14 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age, data=lec)   # Model 14
+m15 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent, data=lec)   # Model 15
+m16 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr, data=lec)   # Model 16
+m17 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint, data=lec)   # Model 17
+m18 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age, data=lec)   # Model 18
+m19 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent,
+          data=lec)   # Model 19
+m20 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi, data=lec)   # Model 20
+m21 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age, data=lec)   # Model 21
+m22 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent, data=lec)   # Model 22
+m23 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi, data=lec)   # Model 23
+m24 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age,
+          data=lec)   # Model 24
+m25 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi, data=lec)   # Model 25
+m26 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi, data=lec)   # Model 26
+m27 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age, data=lec)   # Model 27
+m28 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi, 
+          data=lec)   # Model 28
+m29 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+          + atq_appr:age:lifeevent:atq_avoi, data=lec)   # Model 29
+m30 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+          + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi, data=lec)   # Model 30
+m31 <- lm(pswq_total.x ~ timepoint + age + timepoint:age + lifeevent + lifeevent:timepoint + lifeevent:age + lifeevent:timepoint:age 
+          + atq_avoi + atq_avoi:timepoint + atq_avoi:age + atq_avoi:lifeevent + atq_avoi:timepoint:age + atq_avoi:timepoint:lifeevent 
+          + atq_avoi:lifeevent:age + atq_avoi:timepoint:age:lifeevent + atq_appr + atq_appr:timepoint + atq_appr:age + atq_appr:lifeevent
+          + atq_appr:atq_avoi + atq_appr:timepoint:age + atq_appr:timepoint:lifeevent + atq_appr:timepoint:atq_avoi + atq_appr:lifeevent:age
+          + atq_appr:lifeevent:atq_avoi + atq_appr:age:atq_avoi + atq_appr:timepoint:lifeevent:age + atq_appr:timepoint:lifeevent:atq_avoi 
+          + atq_appr:age:lifeevent:atq_avoi + atq_appr:age:timepoint:atq_avoi + atq_appr:lifeevent:age:timepoint:atq_avoi, data=lec)   # Model 31
