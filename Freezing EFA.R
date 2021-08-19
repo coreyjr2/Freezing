@@ -30,6 +30,7 @@ install.packages("rockchalk")
 install.packages("lmSupport")
 install.packages("jmv")
 install.packages("formattable")
+install.packages("apaTables")
 
 
 library(tidyverse)
@@ -60,6 +61,7 @@ library(rockchalk)
 library(lmSupport)
 library(jmv)
 library(formattable)
+library(apaTables)
 
 
 ##Import data **be sure to order by name before importing so the order of participants matches the Age file
@@ -186,8 +188,7 @@ freezing_raw_d_age$atq_avoi<-rowSums(freezing_raw_d_age[, c("atq_01","atq_03","a
 ######################################################
 ### Create dataset to check lifeevent signficance  ###
 
-lec<-freezing_raw_d_age %>%
-  select(1:5,41,127,131:147,397:402)
+lec<-freezing_raw_d_age[c(1:5,41,127,131:147,397:402)]
 
 # Recode original LEC data
 
@@ -1252,6 +1253,11 @@ cor(Y, method = c("pearson"))
 Y
 
 
+X <- cbind(freezing_raw_d_age$pswq_total, freezing_raw_d_age$rrq_rum_total,freezing_raw_d_age$rrq_refl_total, 
+           freezing_raw_d_age$masq_aa_total,freezing_raw_d_age$masq_lpa_total, freezing_raw_d_age$masq_dm_total)
+cor(X, method = c("pearson"))
+
+apa.cor.table(X, filename="CorTable_paper.doc")
 
 
 ##############################################################
@@ -1537,12 +1543,12 @@ pairs.panels(freezing_raw_d_age[,c(400:405)],
 
 
 #visualize pswq
-ggplot(freezing_demo, aes(x=con_date, y=pswq_total, color=RACE)) +
+ggplot(freezing_demo, aes(x=con_date, y=pswq_total, color= gender)) +
   geom_point(shape=1) +
   scale_colour_hue(l=50) +
   geom_smooth(method=lm, se=F) +
   labs(x= "date of completion", y= "pswq total") +
-  labs(color= "race")
+  labs(color= "gender")
 
 ggplot(freezing_demo, aes(x=con_date, y=pswq_total, color=GENDER)) +
   geom_point(shape=1) +
@@ -3392,9 +3398,9 @@ library(data.table)
 pure16_cor_table<-(setattr(pure16_cor_table,"row.names",c("8","9","18","21","31","42","45","53","54","64","65","66","67","68","69","70")))
 
 #Plot
-install.packages("scatterplot3d")
+install.packages("plot3D")
 library(scatterplot3d)
-
+library(plot3D)
 #reorder columns for plotting pure, pswq, & masq
 pure16_cor_table<-pure16_cor_table[,c(1,3,2,4)]
 
