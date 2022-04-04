@@ -31,7 +31,7 @@ install.packages("lmSupport")
 install.packages("jmv")
 install.packages("formattable")
 install.packages("apaTables")
-
+install.packages("semTable")
 
 library(tidyverse)
 library(psych)
@@ -62,6 +62,7 @@ library(lmSupport)
 library(jmv)
 library(formattable)
 library(apaTables)
+library(semTable)
 
 
 ##Import data **be sure to order by name before importing so the order of participants matches the Age file
@@ -153,6 +154,8 @@ freezing_raw_d_age <- freezing_raw_d %>%
 # Remove age outliers
 freezing_raw_d_age<-freezing_raw_d_age %>%
   dplyr::filter(freezing_raw_d_age$age < 24)
+
+describe(freezing_raw_d_age$age)
 
 #########################################
 ### Add columns for grouping analysis ###
@@ -278,6 +281,117 @@ lec<-lec %>%
     lec_17 != 1 ~ 0,
   ))
 
+
+#############################################
+## Consider witnessing event as endorsement #
+#############################################
+
+
+#lec<-lec %>%
+ # mutate(lec_1=case_when(
+    #lec_1 == 1 ~ 1,
+    #lec_1 == 2 ~ 1,
+   # lec_1 != (1||2) ~ 0,
+ # ))
+#lec<-lec %>%
+  #mutate(lec_2=case_when(
+    lec_2 == 1 ~ 1,
+    lec_2 == 2 ~ 1,
+    lec_2 != (1||2) ~ 0,
+  ))
+#lec<-lec %>%
+ # mutate(lec_3=case_when(
+    lec_3 == 1 ~ 1,
+    lec_3 == 2 ~ 1,
+    lec_3 != (1||2) ~ 0,
+  ))
+#lec<-lec %>%
+ # mutate(lec_4=case_when(
+    lec_4 == 1 ~ 1,
+    lec_4 == 2 ~ 1,
+    lec_4 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_5=case_when(
+    lec_5 == 1 ~ 1,
+    lec_5 == 2 ~ 1,
+    lec_5 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_6=case_when(
+    lec_6 == 1 ~ 1,
+    lec_6 == 2 ~ 1,
+    lec_6 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_7=case_when(
+    lec_7 == 1 ~ 1,
+    lec_7 == 2 ~ 1,
+    lec_7 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_8=case_when(
+    lec_8 == 1 ~ 1,
+    lec_8 == 2 ~ 1,
+    lec_8 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_9=case_when(
+    lec_9 == 1 ~ 1,
+    lec_9 == 2 ~ 1,
+    lec_9 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_10=case_when(
+    lec_10 == 1 ~ 1,
+    lec_10 == 2 ~ 1,
+    lec_10 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_11=case_when(
+    lec_11 == 1 ~ 1,
+    lec_11 == 2 ~ 1,
+    lec_11 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_12=case_when(
+    lec_12 == 1 ~ 1,
+    lec_12 == 2 ~ 1,
+    lec_12 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_13=case_when(
+    lec_13 == 1 ~ 1,
+    lec_13 == 2 ~ 1,
+    lec_13 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_14=case_when(
+    lec_14 == 1 ~ 1,
+    lec_14 == 2 ~ 1,
+    lec_14 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_15=case_when(
+    lec_15 == 1 ~ 1,
+    lec_15 == 2 ~ 1,
+    lec_15 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_16=case_when(
+    lec_16 == 1 ~ 1,
+    lec_16 == 2 ~ 1,
+    lec_16 != (1||2) ~ 0,
+  ))
+lec<-lec %>%
+  mutate(lec_17=case_when(
+    lec_17 == 1 ~ 1,
+    lec_17 == 2 ~ 1,
+    lec_17 != (1||2) ~ 0,
+  ))
+
+
+
 # Create summed column to assess whether or not participants endorsed no events (0), 1 event (1), or more than 1 event (2+)
 
 lec$lec_score<-rowSums(lec[,c(8:24)])
@@ -335,10 +449,25 @@ other <- lec %>%
 ### Assess for differences in endorsed life events
 # try this --> filter(xor(condition1, condition2)), found here: https://suzan.rbind.io/2018/02/dplyr-tutorial-3/
 
+##################################
+## Reliability for all measures ##
+##################################
 
-########################################################
-####### Hierarchical Multi Regression Analysis #######
-########################################################
+masq<-freezing_raw_d_age[,c(88:126)]
+alpha(masq)
+
+pswq<-freezing_raw_d_age[,c(25:40)]
+alpha(pswq)
+
+rrq<-freezing_raw_d_age[,c(42:65)]
+alpha(rrq)
+
+
+typeof(pswq)
+
+####################################################################################################
+####### Hierarchical Multi Regression Analysis  - originally submitted to EA for COVID paper #######
+####################################################################################################
 
 # Check for multicollinearity between IVs
 
@@ -1260,6 +1389,646 @@ cor(X, method = c("pearson"))
 apa.cor.table(X, filename="CorTable_paper.doc")
 
 
+
+
+
+
+
+##############################################################
+##           SEM for Emerging Adulthood review              ##
+##############################################################
+
+# After the second round of reviews on the COVID paper, reviewers suggested that SEM was the proper analytic approach for analyzing multiple dependent variables. This is to test and compare results. 
+
+# core syntax is provided by Feng & Hancock, 2021 in their paper comparing analytic approaches for incremental validity
+
+# The R code that can be used for the first illustrative example in the Feng & Hancock, 2021 paper - adapted for COVID paper dataset (LEC - see code above)
+
+# For our purposes, we will enter each predictor into the SEM using the same order as hierarchical regressions: age + timepoint + timepoint:age + lifeevent + lifeevent:timepoint +  atq_avoi + atq_avoi:timepoint + atq_appr + 
+#atq_appr:timepoint + atq_appr:lifeevent + atq_appr:timepoint:lifeevent
+
+lec
+
+
+# create interaction terms in data:
+
+str(lec)
+
+lec$timepoint <- as.factor((lec$timepoint))
+lec$lifeevent <- as.factor((lec$lifeevent))
+
+lec$timepoint <- as.numeric((lec$timepoint))
+lec$lifeevent <- as.numeric((lec$lifeevent))
+
+lec$timepoint.age <- as.numeric(lec$age)*as.numeric(lec$timepoint)
+lec$lifeevent.timepoint <- as.numeric(lec$lifeevent)*as.numeric(lec$timepoint)
+lec$atq_avoi.timepoint <- as.numeric(lec$atq_avoi)*as.numeric(lec$timepoint)
+lec$atq_appr.timepoint <- as.numeric(lec$atq_appr)*as.numeric(lec$timepoint)
+lec$atq_appr.lifeevent <- as.numeric(lec$atq_appr)*as.numeric(lec$lifeevent)
+lec$atq_appr.timepoint.lifeevent <- as.numeric(lec$atq_appr)*as.numeric(lec$timepoint)*as.numeric(lec$lifeevent)
+
+
+
+
+lec$age <- scale(lec$age)
+lec$timepoint <- scale(lec$timepoint)
+lec$lifeevent <- scale(lec$lifeevent)
+lec$timepoint.age <- scale(lec$timepoint.age)
+lec$lifeevent.timepoint <- scale (lec$lifeevent.timepoint)
+lec$atq_appr <- scale(lec$atq_appr)
+lec$atq_avoi <- scale(lec$atq_avoi)
+lec$atq_avoi.timepoint <- scale(lec$atq_avoi.timepoint)
+lec$atq_appr.timepoint <- scale(lec$atq_appr.timepoint)
+lec$atq_appr.lifeevent <- scale(lec$atq_appr.lifeevent)
+lec$atq_appr.timepoint.lifeevent <- scale(lec$atq_appr.timepoint.lifeevent)
+
+
+# define the lavaan model
+
+model <- '
+
+# Regress each observed predictor on the preceding predictors #
+# Make sure to use interaction terms of predictors that were created for ease in coding #
+
+      timepoint ~ age
+      timepoint.age ~ age + timepoint
+      lifeevent ~ age + timepoint + timepoint.age
+      lifeevent.timepoint ~ age + timepoint + timepoint.age + lifeevent
+      atq_avoi ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint
+      atq_avoi.timepoint ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi
+      atq_appr ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint
+      atq_appr.timepoint ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint + atq_appr
+      atq_appr.lifeevent ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint + atq_appr + atq_appr.timepoint
+      atq_appr.timepoint.lifeevent ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint + atq_appr + atq_appr.timepoint + atq_appr.lifeevent
+
+
+# Explicitly model the residualized part for each observed predictors with latent phantom variables #
+# The factor loading on corresponding phantom variable is labeled as lambda1-11, respectively #  
+
+      e1 =~ c(NA, lambda1)*age
+      e2 =~ c(NA, lambda2)*timepoint
+      e3 =~ c(NA, lambda3)*timepoint.age
+      e4 =~ c(NA, lambda4)*lifeevent
+      e5 =~ c(NA, lambda5)*lifeevent.timepoint  
+      e6 =~ c(NA, lambda6)*atq_avoi
+      e7 =~ c(NA, lambda7)*atq_avoi.timepoint
+      e8 =~ c(NA, lambda8)*atq_appr
+      e9 =~ c(NA, lambda9)*atq_appr.timepoint
+      e10 =~ c(NA, lambda10)*atq_appr.lifeevent
+      e11 =~ c(NA, lambda11)*atq_appr.timepoint.lifeevent
+      
+# The residual phantom variables are constrained to have unit variance #
+
+      e1 ~~ 1*e1
+      e2 ~~ 1*e2
+      e3 ~~ 1*e3
+      e4 ~~ 1*e4
+      e5 ~~ 1*e5
+      e6 ~~ 1*e6
+      e7 ~~ 1*e7
+      e8 ~~ 1*e8
+      e9 ~~ 1*e9
+      e10 ~~ 1*e10
+      e11 ~~ 1*e11
+
+# As we explicitly model the residuals with latent phantom variables,
+# we need to constrain the variance of the conventional residual terms to be zero;      
+      
+      age ~~ 0*age
+      timepoint ~~ 0*timepoint
+      timepoint.age ~~ 0*timepoint.age
+      lifeevent ~~ 0*lifeevent
+      lifeevent.timepoint ~~ 0*lifeevent.timepoint
+      atq_avoi ~~ 0*atq_avoi
+      atq_avoi.timepoint ~~ 0*atq_avoi.timepoint
+      atq_appr ~~ 0*atq_appr
+      atq_appr.timepoint ~~ 0*atq_appr.timepoint
+      atq_appr.lifeevent ~~ 0*atq_appr.lifeevent
+      atq_appr.timepoint.lifeevent ~~ 0*atq_appr.timepoint.lifeevent
+
+      
+      
+# Explicitly model the standardized outcome variables (PSWQ, Rum, Reflection, DM, LPA, AA) with latent variables;      
+      
+      eta_PSWQ =~ c(NA,lambdaPSWQ)*pswq_total
+      eta_PSWQ ~~ zetaPSWQ*eta_PSWQ
+
+      eta_Rum =~ c(NA, lambdaRum)*rrq_rum_total
+      eta_Rum ~~ zetaRum*eta_Rum
+      
+      eta_Refl =~ c(NA,lambdaRefl)*rrq_refl_total
+      eta_Refl ~~ zetaRefl*eta_Refl
+
+      eta_AA =~ c(NA, lambdaAA)*masq_aa_total
+      eta_AA ~~ zetaAA*eta_AA
+      
+      eta_LPA =~ c(NA, lambdaLPA)*masq_lpa_total
+      eta_LPA ~~ zetaLPA*eta_LPA
+      
+      eta_DM =~ c(NA, lambdaDM)*masq_dm_total
+      eta_DM ~~ zetaDM*eta_DM
+      
+      eta_PSWQ ~~ eta_Rum
+      eta_PSWQ ~~ eta_Refl
+      eta_PSWQ ~~ eta_AA
+      eta_PSWQ ~~ eta_LPA
+      eta_PSWQ ~~ eta_DM
+      eta_Rum ~~ eta_Refl
+      eta_Rum ~~ eta_AA
+      eta_Rum ~~ eta_LPA
+      eta_Rum ~~ eta_DM
+      eta_Refl ~~ eta_AA
+      eta_Refl ~~ eta_LPA
+      eta_Refl ~~ eta_DM
+      eta_AA ~~ eta_LPA
+      eta_AA ~~ eta_DM
+      eta_LPA ~~ eta_DM
+      
+      
+      
+# Constrain the variance of the conventional residual terms for the observed outcomes to be zero;      
+      
+      pswq_total ~~ 0*pswq_total
+      rrq_rum_total ~~ 0*rrq_rum_total
+      rrq_refl_total ~~ 0*rrq_refl_total
+      masq_aa_total ~~ 0*masq_aa_total
+      masq_lpa_total ~~ 0*masq_lpa_total
+      masq_dm_total ~~ 0*masq_dm_total
+
+
+# Regress the standardized (latent) outcomes on the residualized latent factors for the observed predictors;
+
+      eta_PSWQ ~ gamma11*e1 + gamma12*e2 + gamma13*e3 + gamma14*e4 + gamma15*e5 + gamma16*e6 + gamma17*e7 + gamma18*e8 + gamma19*e9 + gamma110*e10 + gamma111*e11
+      eta_Rum ~ gamma21*e1 + gamma22*e2 + gamma23*e3 + gamma24*e4 + gamma25*e5 + gamma26*e6 + gamma27*e7 + gamma28*e8 + gamma29*e9 + gamma210*e10 + gamma211*e11
+      eta_Refl ~ gamma31*e1 + gamma32*e2 + gamma33*e3 + gamma34*e4 + gamma35*e5 + gamma36*e6 + gamma37*e7 + gamma38*e8 + gamma39*e9 + gamma310*e10 + gamma311*e11
+      eta_AA ~ gamma41*e1 + gamma42*e2 + gamma43*e3 + gamma44*e4 + gamma45*e5 + gamma46*e6 + gamma47*e7 + gamma48*e8 + gamma49*e9 + gamma410*e10 + gamma411*e11
+      eta_LPA ~ gamma51*e1 + gamma52*e2 + gamma53*e3 + gamma54*e4 + gamma55*e5 + gamma56*e6 + gamma57*e7 + gamma58*e8 + gamma59*e9 + gamma510*e10 + gamma511*e11
+      eta_DM ~ gamma61*e1 + gamma62*e2 + gamma63*e3 + gamma64*e4 + gamma65*e5 + gamma66*e6 + gamma67*e7 + gamma68*e8 + gamma69*e9 + gamma610*e10 + gamma611*e11
+      
+
+
+
+# The residualized portion for each observed predictor (or predictor sets) are orthogonal #
+# Only residuals within the same predictor block are allowed to covary #
+
+      e1 ~~ 0*e2 + 0*e3 + 0*e4 + 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e2 ~~ 0*e3 + 0*e4 + 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e3 ~~ 0*e4 + 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e4 ~~ 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e5 ~~ 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e6 ~~ 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e7 ~~ 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e8 ~~ 0*e9 + 0*e10 + 0*e11
+      e9 ~~ 0*e10 + 0*e11
+      e10 ~~ 0*e11
+
+# mean structure 
+
+      pswq_total ~ 1
+      rrq_rum_total ~ 1
+      rrq_refl_total ~ 1
+      masq_aa_total ~ 1
+      masq_lpa_total ~ 1 
+      masq_dm_total ~ 1
+      age ~ 1
+      timepoint ~ 1
+      timepoint.age ~ 1
+      lifeevent ~ 1
+      lifeevent.timepoint ~ 1
+      atq_avoi ~ 1
+      atq_avoi.timepoint ~ 1
+      atq_appr ~ 1
+      atq_appr.timepoint ~ 1
+      atq_appr.lifeevent ~ 1
+      atq_appr.timepoint.lifeevent ~ 1
+
+# Compute Delta R-squared
+
+      Rsqchg1PSWQ := gamma11^2
+      Rsqchg2PSWQ := gamma12^2
+      Rsqchg3PSWQ := gamma13^2
+      Rsqchg4PSWQ := gamma14^2
+      Rsqchg5PSWQ := gamma15^2
+      Rsqchg6PSWQ := gamma16^2
+      Rsqchg7PSWQ := gamma17^2
+      Rsqchg8PSWQ := gamma18^2
+      Rsqchg9PSWQ := gamma19^2
+      Rsqchg10PSWQ := gamma110^2
+      Rsqchg11PSWQ := gamma111^2
+
+      Rsqchg1Rum := gamma21^2
+      Rsqchg2Rum := gamma22^2
+      Rsqchg3Rum := gamma23^2
+      Rsqchg4Rum := gamma24^2
+      Rsqchg5Rum := gamma25^2
+      Rsqchg6Rum := gamma26^2
+      Rsqchg7Rum := gamma27^2
+      Rsqchg8Rum := gamma28^2
+      Rsqchg9Rum := gamma29^2
+      Rsqchg10Rum := gamma210^2
+      Rsqchg11Rum := gamma211^2
+
+      Rsqchg1Refl := gamma31^2
+      Rsqchg2Refl := gamma32^2
+      Rsqchg3Refl := gamma33^2
+      Rsqchg4Refl := gamma34^2
+      Rsqchg5Refl := gamma35^2
+      Rsqchg6Refl := gamma36^2
+      Rsqchg7Refl := gamma37^2
+      Rsqchg8Refl := gamma38^2
+      Rsqchg9Refl := gamma39^2
+      Rsqchg10Refl := gamma310^2
+      Rsqchg11Refl := gamma311^2
+      
+      Rsqchg1AA := gamma41^2
+      Rsqchg2AA := gamma42^2
+      Rsqchg3AA := gamma43^2
+      Rsqchg4AA := gamma44^2
+      Rsqchg5AA := gamma45^2
+      Rsqchg6AA := gamma46^2
+      Rsqchg7AA := gamma47^2
+      Rsqchg8AA := gamma48^2
+      Rsqchg9AA := gamma49^2
+      Rsqchg10AA := gamma410^2
+      Rsqchg11AA := gamma411^2
+      
+      Rsqchg1LPA := gamma51^2
+      Rsqchg2LPA := gamma52^2
+      Rsqchg3LPA := gamma53^2
+      Rsqchg4LPA := gamma54^2
+      Rsqchg5LPA := gamma55^2
+      Rsqchg6LPA := gamma56^2
+      Rsqchg7LPA := gamma57^2
+      Rsqchg8LPA := gamma58^2
+      Rsqchg9LPA := gamma59^2
+      Rsqchg10LPA := gamma510^2
+      Rsqchg11LPA := gamma511^2  
+      
+      Rsqchg1DM := gamma61^2
+      Rsqchg2DM := gamma62^2
+      Rsqchg3DM := gamma63^2
+      Rsqchg4DM := gamma64^2
+      Rsqchg5DM := gamma65^2
+      Rsqchg6DM := gamma66^2
+      Rsqchg7DM := gamma67^2
+      Rsqchg8DM := gamma68^2
+      Rsqchg9DM := gamma69^2
+      Rsqchg10DM := gamma610^2
+      Rsqchg11DM := gamma611^2 
+      
+
+#---------------- model constraints ----------------------#
+
+# nonnegative residual standard deviations
+
+      lambda1 > 0
+      lambda2 > 0
+      lambda3 > 0
+      lambda4 > 0
+      lambda5 > 0
+      lambda6 > 0
+      lambda7 > 0
+      lambda8 > 0
+      lambda9 > 0
+      lambda10 > 0
+      lambda11 > 0
+
+      lambdaPSWQ > 0
+      lambdaRum > 0
+      lambdaRefl > 0
+      lambdaAA > 0
+      lambdaLPA > 0
+      lambdaDM > 0
+
+# standardize eta_T and eta_E
+
+      1 == zetaPSWQ + gamma11^2 + gamma12^2 + gamma13^2 + gamma14^2 + gamma15^2 + gamma16^2 + gamma17^2 + gamma18^2 + gamma19^2 + gamma110^2 + gamma111^2
+      1 == zetaRum + gamma21^2 + gamma22^2 + gamma23^2 + gamma24^2 + gamma25^2 + gamma26^2 + gamma27^2 + gamma28^2 + gamma29^2 + gamma210^2 + gamma211^2
+      1 == zetaRefl + gamma31^2 + gamma32^2 + gamma33^2 + gamma34^2 + gamma35^2 + gamma36^2 + gamma37^2 + gamma38^2 + gamma39^2 + gamma310^2 + gamma311^2
+      1 == zetaAA + gamma41^2 + gamma42^2 + gamma43^2 + gamma44^2 + gamma45^2 + gamma46^2 + gamma47^2 + gamma48^2 + gamma49^2 + gamma410^2 + gamma411^2
+      1 == zetaLPA + gamma51^2 + gamma52^2 + gamma53^2 + gamma54^2 + gamma55^2 + gamma56^2 + gamma57^2 + gamma58^2 + gamma59^2 + gamma510^2 + gamma511^2
+      1 == zetaDM + gamma61^2 + gamma62^2 + gamma63^2 + gamma64^2 + gamma65^2 + gamma66^2 + gamma67^2 + gamma68^2 + gamma69^2 + gamma610^2 + gamma611^2
+
+
+'
+
+# fit the model
+mod_fit1 <- lavaan(model,lec, missing = "fiml")
+summary(mod_fit1)
+
+
+
+names(lec)
+describe(lec$atq_appr.timepoint.lifeevent)
+varTable(mod_fit1)
+
+
+# fit the model and request bootstrapped CI
+mod_fit2 <- lavaan(model, lec, missing = "fiml", se = "boot",  bootstrap = 1000)
+summary(mod_fit2)
+
+parameterEstimates(mod_fit2, level = 0.95, boot.ci.type = "perc")
+
+
+
+
+##########################################################################################
+## Mimic the hand-picked correlation allowances (post-hoc analysis in main submission)  ##
+##########################################################################################
+
+
+
+# define the lavaan model as paralleled by hierarchical regression analysis 
+
+model <- '
+
+# Regress each observed predictor on the preceding predictors #
+# Make sure to use interaction terms of predictors that were created for ease in coding #
+
+      timepoint ~ age
+      timepoint.age ~ age + timepoint
+      lifeevent ~ age + timepoint + timepoint.age
+      lifeevent.timepoint ~ age + timepoint + timepoint.age + lifeevent
+      atq_avoi ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint
+      atq_avoi.timepoint ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi
+      atq_appr ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint
+      atq_appr.timepoint ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint + atq_appr
+      atq_appr.lifeevent ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint + atq_appr + atq_appr.timepoint
+      atq_appr.timepoint.lifeevent ~ age + timepoint + timepoint.age + lifeevent + lifeevent.timepoint + atq_avoi + atq_avoi.timepoint + atq_appr + atq_appr.timepoint + atq_appr.lifeevent
+
+
+# Explicitly model the residualized part for each observed predictors with latent phantom variables #
+# The factor loading on corresponding phantom variable is labeled as lambda1-11, respectively #  
+
+      e1 =~ c(NA, lambda1)*age
+      e2 =~ c(NA, lambda2)*timepoint
+      e3 =~ c(NA, lambda3)*timepoint.age
+      e4 =~ c(NA, lambda4)*lifeevent
+      e5 =~ c(NA, lambda5)*lifeevent.timepoint  
+      e6 =~ c(NA, lambda6)*atq_avoi
+      e7 =~ c(NA, lambda7)*atq_avoi.timepoint
+      e8 =~ c(NA, lambda8)*atq_appr
+      e9 =~ c(NA, lambda9)*atq_appr.timepoint
+      e10 =~ c(NA, lambda10)*atq_appr.lifeevent
+      e11 =~ c(NA, lambda11)*atq_appr.timepoint.lifeevent
+      
+# The residual phantom variables are constrained to have unit variance #
+
+      e1 ~~ 1*e1
+      e2 ~~ 1*e2
+      e3 ~~ 1*e3
+      e4 ~~ 1*e4
+      e5 ~~ 1*e5
+      e6 ~~ 1*e6
+      e7 ~~ 1*e7
+      e8 ~~ 1*e8
+      e9 ~~ 1*e9
+      e10 ~~ 1*e10
+      e11 ~~ 1*e11
+
+# As we explicitly model the residuals with latent phantom variables,
+# we need to constrain the variance of the conventional residual terms to be zero;      
+      
+      age ~~ 0*age
+      timepoint ~~ 0*timepoint
+      timepoint.age ~~ 0*timepoint.age
+      lifeevent ~~ 0*lifeevent
+      lifeevent.timepoint ~~ 0*lifeevent.timepoint
+      atq_avoi ~~ 0*atq_avoi
+      atq_avoi.timepoint ~~ 0*atq_avoi.timepoint
+      atq_appr ~~ 0*atq_appr
+      atq_appr.timepoint ~~ 0*atq_appr.timepoint
+      atq_appr.lifeevent ~~ 0*atq_appr.lifeevent
+      atq_appr.timepoint.lifeevent ~~ 0*atq_appr.timepoint.lifeevent
+
+      
+      
+# Explicitly model the standardized outcome variables (PSWQ, Rum, Reflection, DM, LPA, AA) with latent variables;      
+      
+      eta_PSWQ =~ c(NA,lambdaPSWQ)*pswq_total
+      eta_PSWQ ~~ zetaPSWQ*eta_PSWQ
+
+      eta_Rum =~ c(NA, lambdaRum)*rrq_rum_total
+      eta_Rum ~~ zetaRum*eta_Rum
+      
+      eta_Refl =~ c(NA,lambdaRefl)*rrq_refl_total
+      eta_Refl ~~ zetaRefl*eta_Refl
+
+      eta_AA =~ c(NA, lambdaAA)*masq_aa_total
+      eta_AA ~~ zetaAA*eta_AA
+      
+      eta_LPA =~ c(NA, lambdaLPA)*masq_lpa_total
+      eta_LPA ~~ zetaLPA*eta_LPA
+      
+      eta_DM =~ c(NA, lambdaDM)*masq_dm_total
+      eta_DM ~~ zetaDM*eta_DM
+      
+      eta_PSWQ ~~ eta_Rum
+      eta_PSWQ ~~ eta_Refl
+      eta_PSWQ ~~ eta_AA
+      eta_PSWQ ~~ eta_LPA
+      eta_PSWQ ~~ eta_DM
+      eta_Rum ~~ eta_Refl
+      eta_Rum ~~ eta_AA
+      eta_Rum ~~ eta_LPA
+      eta_Rum ~~ eta_DM
+      eta_Refl ~~ eta_AA
+      eta_Refl ~~ eta_LPA
+      eta_Refl ~~ eta_DM
+      eta_AA ~~ eta_LPA
+      eta_AA ~~ eta_DM
+      eta_LPA ~~ eta_DM
+      
+      
+      
+# Constrain the variance of the conventional residual terms for the observed outcomes to be zero;      
+      
+      pswq_total ~~ 0*pswq_total
+      rrq_rum_total ~~ 0*rrq_rum_total
+      rrq_refl_total ~~ 0*rrq_refl_total
+      masq_aa_total ~~ 0*masq_aa_total
+      masq_lpa_total ~~ 0*masq_lpa_total
+      masq_dm_total ~~ 0*masq_dm_total
+
+
+# Regress the standardized (latent) outcomes on the residualized latent factors for the observed predictors;
+
+      eta_PSWQ ~ gamma11*e1 + gamma12*e2 + gamma13*e3 + gamma14*e4 + gamma15*e5 + gamma16*e6 + gamma17*e7 + gamma18*e8 + gamma19*e9 + gamma110*e10 + gamma111*e11
+      eta_Rum ~ gamma21*e1 + gamma22*e2 + gamma23*e3 + gamma24*e4 + gamma25*e5 + gamma26*e6 + gamma27*e7 + gamma28*e8 + gamma29*e9 + gamma210*e10 + gamma211*e11
+      eta_Refl ~ gamma31*e1 + gamma32*e2 + gamma33*e3 + gamma34*e4 + gamma35*e5 + gamma36*e6 + gamma37*e7 + gamma38*e8 + gamma39*e9 + gamma310*e10 + gamma311*e11
+      eta_AA ~ gamma41*e1 + gamma42*e2 + gamma43*e3 + gamma44*e4 + gamma45*e5 + gamma46*e6 + gamma47*e7 + gamma48*e8 + gamma49*e9 + gamma410*e10 + gamma411*e11
+      eta_LPA ~ gamma51*e1 + gamma52*e2 + gamma53*e3 + gamma54*e4 + gamma55*e5 + gamma56*e6 + gamma57*e7 + gamma58*e8 + gamma59*e9 + gamma510*e10 + gamma511*e11
+      eta_DM ~ gamma61*e1 + gamma62*e2 + gamma63*e3 + gamma64*e4 + gamma65*e5 + gamma66*e6 + gamma67*e7 + gamma68*e8 + gamma69*e9 + gamma610*e10 + gamma611*e11
+      
+
+
+
+# The residualized portion for each observed predictor (or predictor sets) are orthogonal #
+# Only residuals within the same predictor block are allowed to covary #
+
+      e1 ~~ 0*e2 + 0*e3 + 0*e4 + 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e2 ~~ 0*e3 + 0*e4 + 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e3 ~~ 0*e4 + 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e4 ~~ 0*e5 + 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e5 ~~ 0*e6 + 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e6 ~~ 0*e7 + 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e7 ~~ 0*e8 + 0*e9 + 0*e10 + 0*e11
+      e8 ~~ 0*e9 + 0*e10 + 0*e11
+      e9 ~~ 0*e10 + 0*e11
+      e10 ~~ 0*e11
+
+# mean structure 
+
+      pswq_total ~ 1
+      rrq_rum_total ~ 1
+      rrq_refl_total ~ 1
+      masq_aa_total ~ 1
+      masq_lpa_total ~ 1 
+      masq_dm_total ~ 1
+      age ~ 1
+      timepoint ~ 1
+      timepoint.age ~ 1
+      lifeevent ~ 1
+      lifeevent.timepoint ~ 1
+      atq_avoi ~ 1
+      atq_avoi.timepoint ~ 1
+      atq_appr ~ 1
+      atq_appr.timepoint ~ 1
+      atq_appr.lifeevent ~ 1
+      atq_appr.timepoint.lifeevent ~ 1
+
+# Compute Delta R-squared
+
+      Rsqchg1PSWQ := gamma11^2
+      Rsqchg2PSWQ := gamma12^2
+      Rsqchg3PSWQ := gamma13^2
+      Rsqchg4PSWQ := gamma14^2
+      Rsqchg5PSWQ := gamma15^2
+      Rsqchg6PSWQ := gamma16^2
+      Rsqchg7PSWQ := gamma17^2
+      Rsqchg8PSWQ := gamma18^2
+      Rsqchg9PSWQ := gamma19^2
+      Rsqchg10PSWQ := gamma110^2
+      Rsqchg11PSWQ := gamma111^2
+
+      Rsqchg1Rum := gamma21^2
+      Rsqchg2Rum := gamma22^2
+      Rsqchg3Rum := gamma23^2
+      Rsqchg4Rum := gamma24^2
+      Rsqchg5Rum := gamma25^2
+      Rsqchg6Rum := gamma26^2
+      Rsqchg7Rum := gamma27^2
+      Rsqchg8Rum := gamma28^2
+      Rsqchg9Rum := gamma29^2
+      Rsqchg10Rum := gamma210^2
+      Rsqchg11Rum := gamma211^2
+
+      Rsqchg1Refl := gamma31^2
+      Rsqchg2Refl := gamma32^2
+      Rsqchg3Refl := gamma33^2
+      Rsqchg4Refl := gamma34^2
+      Rsqchg5Refl := gamma35^2
+      Rsqchg6Refl := gamma36^2
+      Rsqchg7Refl := gamma37^2
+      Rsqchg8Refl := gamma38^2
+      Rsqchg9Refl := gamma39^2
+      Rsqchg10Refl := gamma310^2
+      Rsqchg11Refl := gamma311^2
+      
+      Rsqchg1AA := gamma41^2
+      Rsqchg2AA := gamma42^2
+      Rsqchg3AA := gamma43^2
+      Rsqchg4AA := gamma44^2
+      Rsqchg5AA := gamma45^2
+      Rsqchg6AA := gamma46^2
+      Rsqchg7AA := gamma47^2
+      Rsqchg8AA := gamma48^2
+      Rsqchg9AA := gamma49^2
+      Rsqchg10AA := gamma410^2
+      Rsqchg11AA := gamma411^2
+      
+      Rsqchg1LPA := gamma51^2
+      Rsqchg2LPA := gamma52^2
+      Rsqchg3LPA := gamma53^2
+      Rsqchg4LPA := gamma54^2
+      Rsqchg5LPA := gamma55^2
+      Rsqchg6LPA := gamma56^2
+      Rsqchg7LPA := gamma57^2
+      Rsqchg8LPA := gamma58^2
+      Rsqchg9LPA := gamma59^2
+      Rsqchg10LPA := gamma510^2
+      Rsqchg11LPA := gamma511^2  
+      
+      Rsqchg1DM := gamma61^2
+      Rsqchg2DM := gamma62^2
+      Rsqchg3DM := gamma63^2
+      Rsqchg4DM := gamma64^2
+      Rsqchg5DM := gamma65^2
+      Rsqchg6DM := gamma66^2
+      Rsqchg7DM := gamma67^2
+      Rsqchg8DM := gamma68^2
+      Rsqchg9DM := gamma69^2
+      Rsqchg10DM := gamma610^2
+      Rsqchg11DM := gamma611^2 
+      
+
+#---------------- model constraints ----------------------#
+
+# nonnegative residual standard deviations
+
+      lambda1 > 0
+      lambda2 > 0
+      lambda3 > 0
+      lambda4 > 0
+      lambda5 > 0
+      lambda6 > 0
+      lambda7 > 0
+      lambda8 > 0
+      lambda9 > 0
+      lambda10 > 0
+      lambda11 > 0
+
+      lambdaPSWQ > 0
+      lambdaRum > 0
+      lambdaRefl > 0
+      lambdaAA > 0
+      lambdaLPA > 0
+      lambdaDM > 0
+
+# standardize eta_T and eta_E
+
+      1 == zetaPSWQ + gamma11^2 + gamma12^2 + gamma13^2 + gamma14^2 + gamma15^2 + gamma16^2 + gamma17^2 + gamma18^2 + gamma19^2 + gamma110^2 + gamma111^2
+      1 == zetaRum + gamma21^2 + gamma22^2 + gamma23^2 + gamma24^2 + gamma25^2 + gamma26^2 + gamma27^2 + gamma28^2 + gamma29^2 + gamma210^2 + gamma211^2
+      1 == zetaRefl + gamma31^2 + gamma32^2 + gamma33^2 + gamma34^2 + gamma35^2 + gamma36^2 + gamma37^2 + gamma38^2 + gamma39^2 + gamma310^2 + gamma311^2
+      1 == zetaAA + gamma41^2 + gamma42^2 + gamma43^2 + gamma44^2 + gamma45^2 + gamma46^2 + gamma47^2 + gamma48^2 + gamma49^2 + gamma410^2 + gamma411^2
+      1 == zetaLPA + gamma51^2 + gamma52^2 + gamma53^2 + gamma54^2 + gamma55^2 + gamma56^2 + gamma57^2 + gamma58^2 + gamma59^2 + gamma510^2 + gamma511^2
+      1 == zetaDM + gamma61^2 + gamma62^2 + gamma63^2 + gamma64^2 + gamma65^2 + gamma66^2 + gamma67^2 + gamma68^2 + gamma69^2 + gamma610^2 + gamma611^2
+
+
+'
+
+# fit the model
+mod_fit1 <- lavaan(model,lec, missing = "fiml")
+summary(mod_fit1)
+
+
+
+names(lec)
+describe(lec$atq_appr.timepoint.lifeevent)
+varTable(mod_fit1)
+
+
+# fit the model and request bootstrapped CI
+mod_fit2 <- lavaan(model, lec, missing = "fiml", se = "boot",  bootstrap = 1000)
+summary(mod_fit2)
+
+parameterEstimates(mod_fit2, level = 0.95, boot.ci.type = "perc")
+
+
+
+
+
+
 ##############################################################
 ##           DESCRIPTIVE STATISTICS FOR TABLES              ##
 ##############################################################
@@ -1494,6 +2263,29 @@ grouped.data.mlm <- freezing_raw_d_age %>%
   group_by(variable)
 
 grouped.data.mlm %>% anova_test(value ~ atq_avoi*atq_appr)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ##############################################################################
 # Tests that follow are exploratory and unrelated to Pandemic Trends Paper   #
